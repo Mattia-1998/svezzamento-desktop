@@ -370,7 +370,7 @@ const CalfDetailModal = ({ show, onClose, calfData, globalConfig, exportToPdf, e
                 settimana: item.settimana,
                 dataInizio: formatDate(dataInizioSettimana),
                 dataFine: formatDate(dataFineSettimana),
-                latteGiornaliero: latteGiornaliero,
+                latteGiornaliero: latteGiornalieroLitri,
                 acquaGiornaliera: 0, // Always 0 for cow milk
                 polvereGiornaliera: 0, // Always 0 for cow milk
                 lattePerPasto: lattePerPasto,
