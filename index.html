@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applicazione Svezzamento Vitelli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-900">
+    <div id="root"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="./vitelli.js"></script>
+    
+    <script>
+      // Assicurati che l'app venga inizializzata quando il DOM è pronto
+      document.addEventListener('DOMContentLoaded', () => {
+          const rootElement = document.getElementById('root');
+          if (!rootElement) {
+              console.error('ERRORE: Elemento con ID "root" non trovato nel DOM. Si prega di verificare il file index.html.');
+              // Potresti voler creare l'elemento root se non esiste, ma è meglio che esista nell'HTML
+              return; 
+          }
+          // Verifica che React e ReactDOM siano disponibili
+          if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+              console.error('ERRORE: React o ReactDOM non sono stati caricati correttamente. Assicurati che i loro script CDN siano presenti e caricati prima di vitelli.js.');
+              return;
+          }
+          // Verifica che il componente App sia definito prima di tentare il rendering
+          if (typeof App === 'undefined') {
+              console.error('ERRORE: Il componente "App" non è definito. Questo di solito indica un errore di sintassi in vitelli.js che impedisce la sua esecuzione, o che vitelli.js non è stato caricato.');
+              return;
+          }
+
+          try {
+              const root = ReactDOM.createRoot(rootElement);
+              root.render(React.createElement(App)); // Renderizza il componente App
+          } catch (e) {
+              console.error('ERRORE: Impossibile eseguire il rendering del componente App.', e);
+          }
+      });
+    </script>
+</body>
+</html>

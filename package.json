@@ -1,0 +1,39 @@
+{
+  "name": "svezzamento-desktop",
+  "version": "1.0.5",
+  "description": "Applicazione Svezzamento Vitelli desktop con React ed Electron",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:windows": "electron-builder --windows"
+  },
+  "keywords": [],
+  "author": "Giroldini Mattia",
+  "license": "ISC",
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "yauzl": "^3.2.0"
+  },
+  "devDependencies": {
+    "electron": "^29.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.giroldini.svezzamento",
+    "files": [
+      "main.js",
+      "index.html",
+      "vitelli.js",
+      "preload.js",
+      "node_modules/**/*",
+      "icon.ico"
+    ],
+    "directories": {
+      "output": "build-output"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    }
+  }
+}
