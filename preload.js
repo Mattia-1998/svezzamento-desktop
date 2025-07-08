@@ -24,7 +24,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Queste chiameranno i gestori IPC definiti in main.js.
     exportAllDataZip: () => ipcRenderer.invoke('export-all-data-zip'),
     importDataFromFile: () => ipcRenderer.invoke('import-data-from-file'),
+    
+    // API per ottenere le informazioni sull'applicazione
+    getAppInfo: () => ipcRenderer.invoke('get-app-info'),
 });
 
-// Messaggio di log per confermare che lo script preload è stato caricato.
-console.log("preload.js caricato e electronAPI esposta al contesto del renderer.");
+// Messaggio di log per indicare che preload.js è stato caricato
+console.log('preload.js caricato con successo.');

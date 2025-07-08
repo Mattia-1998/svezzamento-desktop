@@ -20,268 +20,286 @@ const calfDataFilePath = path.join(appDataDir, 'vitelli_data.json');
 const configFilePath = path.join(appDataDir, 'config_data.json');
 const migrationStatusFilePath = path.join(appDataDir, 'migration_status.json');
 
-// Assicurati che le directory esistano all'avvio dell'applicazione.
-// Se le directory non esistono, vengono create ricorsivamente.
-try {
-  if (!fs.existsSync(appDataDir)) {
-    fs.mkdirSync(appDataDir, { recursive: true });
+// Assicurati che la directory esista al momento dell'avvio
+fs.mkdirSync(appDataDir, { recursive: true });
+fs.mkdirSync(backupDir, { recursive: true });
+
+// Funzione per salvare i dati in un file JSON
+function saveJsonToFile(filePath, data) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    return { success: true };
+  } catch (error) {
+    console.error(`Errore durante il salvataggio del file ${filePath}:`, error);
+    return { success: false, error: error.message };
   }
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
-  }
-} catch (err) {
-  console.error(`Errore durante la creazione delle directory:`, err);
-  // Potresti voler gestire questo errore in modo più robusto, ad esempio, mostrando un messaggio all'utente.
 }
 
-function createWindow() {
-  // Crea la finestra del browser.
-  const mainWindow = new BrowserWindow({
-    width: 1000, // Larghezza iniziale della finestra
-    height: 700, // Altezza iniziale della finestra
-    minWidth: 800, // Larghezza minima consentita
-    minHeight: 600, // Altezza minima consentita
+// Funzione per caricare i dati da un file JSON
+function loadJsonFromFile(filePath) {
+  try {
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      return { success: true, data: JSON.parse(data) };
+    }
+    return { success: true, data: null }; // Il file non esiste, nessun dato
+  } catch (error) {
+    console.error(`Errore durante il caricamento del file ${filePath}:`, error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Funzione per controllare lo stato di migrazione
+ipcMain.handle('check-migration-status', async () => {
+  const result = loadJsonFromFile(migrationStatusFilePath);
+  if (result.success && result.data && result.data.migrated) {
+    return true;
+  }
+  return false;
+});
+
+// Funzione per marcare la migrazione come completata
+ipcMain.handle('mark-migration-done', async () => {
+  return saveJsonToFile(migrationStatusFilePath, { migrated: true });
+});
+
+// Funzione per la creazione della finestra principale
+const createWindow = () => {
+  const win = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 800, // Larghezza minima
+    minHeight: 600, // Altezza minima
     webPreferences: {
-      // Lo script preload.js viene eseguito prima che gli script della pagina web vengano caricati.
-      // Ha accesso sia alle API Node.js che alle API DOM, ma è isolato per sicurezza.
-      preload: path.join(__dirname, 'preload.js'), // Abilitato lo script preload
-      nodeIntegration: false, // Disabilita l'integrazione di Node.js nel renderer per sicurezza (raccomandato)
-      contextIsolation: true, // Abilita l'isolamento del contesto per sicurezza (raccomandato)
+      preload: path.join(__dirname, 'preload.js'),
+      // Disabilita contextIsolation per l'accesso diretto a window.electronAPI
+      // È raccomandato abilitare contextIsolation e usare contextBridge in preload.js
+      contextIsolation: true, // Questo dovrebbe essere true per sicurezza
+      nodeIntegration: false, // E questo dovrebbe essere false
     },
-    autoHideMenuBar: true // Nasconde automaticamente la barra dei menu
+    icon: path.join(__dirname, 'icon.ico'), // Assicurati di avere un file icon.ico nella stessa directory di main.js
   });
 
-  // Carica il file HTML principale della tua applicazione React.
-  // Assicurati che 'index.html' sia nel percorso corretto rispetto a questo file.
-  mainWindow.loadFile('index.html');
+  // Carica il file index.html dell'app.
+  win.loadFile('index.html');
 
-  // Imposta la visibilità della barra dei menu su false per nasconderla completamente.
-  mainWindow.setMenuBarVisibility(false);
+};
 
-
-  // Apri gli Strumenti per sviluppatori (DevTools) se l'applicazione non è in produzione.
-  // if (!app.isPackaged) {
-  //   mainWindow.webContents.openDevTools();
-  // }
-}
-
-// Quando Electron ha finito di inizializzare ed è pronto per creare finestre del browser.
-// Alcune API possono essere usate solo dopo che questo evento si verifica.
+// Questo metodo verrà chiamato quando Electron avrà finito
+// di inizializzare e sarà pronto per creare finestre browser.
+// Alcune API possono essere usate solo dopo che questo evento occorre.
 app.whenReady().then(() => {
   createWindow();
 
-  // Gestore IPC per il salvataggio dei dati dei vitelli
+  // Rimuove la barra del menu dell'applicazione
+  Menu.setApplicationMenu(null);
+
+  // Gestori IPC (Inter-Process Communication)
   ipcMain.handle('save-calf-data', async (event, data) => {
-    try {
-      fs.writeFileSync(calfDataFilePath, JSON.stringify(data, null, 2), 'utf8');
-      return { success: true };
-    } catch (error) {
-      console.error('Errore durante il salvataggio dei dati dei vitelli:', error);
-      return { success: false, error: error.message };
-    }
+    return saveJsonToFile(calfDataFilePath, data);
   });
 
-  // Gestore IPC per il caricamento dei dati dei vitelli
   ipcMain.handle('load-calf-data', async () => {
-    try {
-      if (fs.existsSync(calfDataFilePath)) {
-        const data = fs.readFileSync(calfDataFilePath, 'utf8');
-        return { success: true, data: JSON.parse(data) };
-      }
-      return { success: true, data: [] }; // Restituisce un array vuoto se il file non esiste
-    } catch (error) {
-      console.error('Errore durante il caricamento dei dati dei vitelli:', error);
-      return { success: false, error: error.message };
-    }
+    return loadJsonFromFile(calfDataFilePath);
   });
 
-  // Gestore IPC per il salvataggio della configurazione
   ipcMain.handle('save-config', async (event, config) => {
-    try {
-      fs.writeFileSync(configFilePath, JSON.stringify(config, null, 2), 'utf8');
-      return { success: true };
-    } catch (error) {
-      console.error('Errore durante il salvataggio della configurazione:', error);
-      return { success: false, error: error.message };
-    }
+    return saveJsonToFile(configFilePath, config);
   });
 
-  // Gestore IPC per il caricamento della configurazione
   ipcMain.handle('load-config', async () => {
-    try {
-      if (fs.existsSync(configFilePath)) {
-        const config = fs.readFileSync(configFilePath, 'utf8');
-        return { success: true, data: JSON.parse(config) };
-      }
-      return { success: true, data: {} }; // Restituisce un oggetto vuoto se il file non esiste
-    } catch (error) {
-      console.error('Errore durante il caricamento della configurazione:', error);
-      return { success: false, error: error.message };
-    }
+    return loadJsonFromFile(configFilePath);
   });
 
-  // Gestore IPC per controllare lo stato della migrazione
-  ipcMain.handle('check-migration-status', async () => {
-    try {
-      if (fs.existsSync(migrationStatusFilePath)) {
-        const status = fs.readFileSync(migrationStatusFilePath, 'utf8');
-        return { success: true, data: JSON.parse(status) };
-      }
-      return { success: true, data: { done: false } };
-    } catch (error) {
-      console.error('Errore durante il controllo dello stato della migrazione:', error);
-      return { success: false, error: error.message };
-    }
+  // Gestore per ottenere le informazioni sull'applicazione
+  ipcMain.handle('get-app-info', async () => {
+    return {
+      name: app.getName(),
+      version: app.getVersion(),
+    };
   });
 
-  // Gestore IPC per marcare la migrazione come completata
-  ipcMain.handle('mark-migration-done', async () => {
-    try {
-      fs.writeFileSync(migrationStatusFilePath, JSON.stringify({ done: true }), 'utf8');
-      return { success: true };
-    } catch (error) {
-      console.error('Errore durante la marcatura della migrazione:', error);
-      return { success: false, error: error.message };
-    }
-  });
+  // Gestore per l'esportazione ZIP
+  ipcMain.handle('export-all-data-zip', async () => {
+    return new Promise(async (resolve) => {
+      const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+      const zipFileName = `svezzamento_data_backup_${timestamp}.zip`;
+      const outputPath = path.join(backupDir, zipFileName);
 
-  // Gestore IPC per l'esportazione di tutti i dati in un file ZIP
-  ipcMain.handle('export-all-data-zip', async (event) => {
-    // Il percorso di salvataggio è ora fisso nella directory di backup
-    const filePath = path.join(backupDir, `Svezzamento_Dati_Backup_${new Date().toISOString().slice(0,10)}.zip`);
-
-    return new Promise((resolve) => {
-      const output = fs.createWriteStream(filePath);
+      const output = fs.createWriteStream(outputPath);
       const archive = archiver('zip', {
         zlib: { level: 9 } // Livello di compressione massimo
       });
 
       output.on('close', () => {
-        resolve({ success: true, filePath: filePath, message: 'Dati esportati con successo!' });
+        console.log(`Archivio ZIP creato: ${outputPath}, ${archive.pointer()} bytes totali`);
+        dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+          type: 'info',
+          title: 'Esportazione Completata',
+          message: `Backup dei dati salvato in:\n${outputPath}`,
+          buttons: ['OK']
+        });
+        resolve({ success: true, path: outputPath });
       });
 
       archive.on('warning', (err) => {
         if (err.code === 'ENOENT') {
           console.warn('Avviso archiver:', err);
         } else {
-          console.error('Errore archiver:', err);
-          resolve({ success: false, error: err.message });
+          throw err;
         }
       });
 
       archive.on('error', (err) => {
         console.error('Errore archiver:', err);
+        dialog.showErrorBox('Errore di Esportazione', `Errore durante la creazione del backup ZIP: ${err.message}`);
         resolve({ success: false, error: err.message });
       });
 
       archive.pipe(output);
 
-      // Aggiungi i file dalla directory di configurazione alla radice dello ZIP
+      // Aggiungi i file di dati e configurazione all'archivio
       if (fs.existsSync(calfDataFilePath)) {
         archive.file(calfDataFilePath, { name: path.basename(calfDataFilePath) });
-      } else {
-        console.warn(`File non trovato per l'esportazione: ${calfDataFilePath}`);
       }
       if (fs.existsSync(configFilePath)) {
         archive.file(configFilePath, { name: path.basename(configFilePath) });
-      } else {
-        console.warn(`File non trovato per l'esportazione: ${configFilePath}`);
       }
       if (fs.existsSync(migrationStatusFilePath)) {
         archive.file(migrationStatusFilePath, { name: path.basename(migrationStatusFilePath) });
-      } else {
-        console.warn(`File non trovato per l'esportazione: ${migrationStatusFilePath}`);
       }
 
       archive.finalize();
     });
   });
 
-  // Gestore IPC per l'importazione di dati da un file ZIP o JSON
-  ipcMain.handle('import-data-from-file', async (event) => {
-    const window = BrowserWindow.fromWebContents(event.sender);
-    const { filePaths } = await dialog.showOpenDialog(window, {
-      title: 'Importa dati',
+  // Gestore per l'importazione di dati
+  ipcMain.handle('import-data-from-file', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(BrowserWindow.getFocusedWindow(), {
       properties: ['openFile'],
       filters: [
-        { name: 'File di Dati Svezzamento', extensions: ['zip', 'json'] },
-        { name: 'Tutti i file', extensions: ['*'] }
+        { name: 'Dati Svezzamento', extensions: ['zip', 'json'] },
+        { name: 'Tutti i File', extensions: ['*'] }
       ]
     });
 
-    if (!filePaths || filePaths.length === 0) {
-      return { success: false, message: 'Importazione annullata.' };
+    if (canceled || filePaths.length === 0) {
+      return { success: false, message: 'Importazione annullata dall\'utente.' };
     }
 
-    const sourceFilePath = filePaths[0];
-    const fileExtension = path.extname(sourceFilePath).toLowerCase();
+    const filePath = filePaths[0];
+    const fileExtension = path.extname(filePath).toLowerCase();
 
     if (fileExtension === '.json') {
-      // Se è un file JSON, prova a importarlo come dati vitelli o configurazione
-      try {
-        const jsonData = fs.readFileSync(sourceFilePath, 'utf8');
-        const parsedData = JSON.parse(jsonData);
-
-        if (Array.isArray(parsedData) && parsedData.every(item => typeof item === 'object' && item !== null && 'id' in item)) {
-          // Sembra essere un file di dati vitelli
-          fs.writeFileSync(calfDataFilePath, JSON.stringify(parsedData, null, 2), 'utf8');
-          return { success: true, message: 'Dati vitelli importati con successo!' };
-        } else if (typeof parsedData === 'object' && parsedData !== null) {
-          // Sembra essere un file di configurazione
-          fs.writeFileSync(configFilePath, JSON.stringify(parsedData, null, 2), 'utf8');
-          return { success: true, message: 'Configurazione importata con successo!' };
-        } else {
-          console.error('Formato JSON non riconosciuto per l\'importazione.');
-          return { success: false, error: 'Formato JSON non riconosciuto.' };
-        }
-      } catch (error) {
-        console.error('Errore durante l\'importazione del file JSON:', error);
-        return { success: false, error: `Errore durante l'importazione del file JSON: ${error.message}` };
-      }
-    } else if (fileExtension === '.zip') {
-      // Se è un file ZIP, estrai i file e salvali nelle posizioni corrette
+      // Importazione di un singolo file JSON
       return new Promise((resolve) => {
-        yauzl.open(sourceFilePath, { lazyEntries: true }, (err, zipfile) => {
-          if (err) {
-            console.error('Errore nell\'apertura del file ZIP:', err);
-            return resolve({ success: false, error: `Errore nell'apertura del file ZIP: ${err.message}` });
-          }
+        dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+          type: 'warning',
+          title: 'Conferma Sovrascrittura',
+          message: 'Stai per importare un file JSON. Questo sovrascriverà i dati esistenti. Vuoi continuare?',
+          buttons: ['Sì', 'No'],
+          defaultId: 1 // 'No' come default
+        }).then(({ response }) => {
+          if (response === 0) { // Utente ha cliccato 'Sì'
+            try {
+              const importedData = fs.readFileSync(filePath, 'utf-8');
+              const parsedData = JSON.parse(importedData);
 
-          zipfile.on('entry', (entry) => {
-            // Ignora le directory
-            if (/\/$/.test(entry.fileName)) {
-              zipfile.readEntry();
-              return;
+              // Determina quale file sovrascrivere in base al contenuto o al nome del file
+              if (filePath.includes('vitelli_data.json') || (parsedData.calves && !parsedData.globalConfig)) {
+                saveJsonToFile(calfDataFilePath, parsedData);
+                resolve({ success: true, message: 'Dati vitelli importati con successo!' });
+              } else if (filePath.includes('config_data.json') || (parsedData.globalConfig && !parsedData.calves)) {
+                saveJsonToFile(configFilePath, parsedData);
+                resolve({ success: true, message: 'Configurazione importata con successo!' });
+              } else if (parsedData.calves && parsedData.globalConfig) {
+                // Se il JSON contiene sia vitelli che config, salvali entrambi
+                saveJsonToFile(calfDataFilePath, parsedData.calves);
+                saveJsonToFile(configFilePath, parsedData.globalConfig);
+                resolve({ success: true, message: 'Dati vitelli e configurazione importati con successo!' });
+              }
+              else {
+                resolve({ success: false, error: 'Il file JSON selezionato non sembra contenere dati o configurazioni validi per questa applicazione.' });
+              }
+            } catch (err) {
+              console.error('Errore durante l\'importazione del file JSON:', err);
+              resolve({ success: false, error: `Errore durante l'importazione del file JSON: ${err.message}` });
             }
-
-            const targetPath = path.join(appDataDir, path.basename(entry.fileName));
-
-            zipfile.openReadStream(entry, (err, readStream) => {
+          } else {
+            resolve({ success: false, message: 'Importazione annullata.' });
+          }
+        });
+      });
+    } else if (fileExtension === '.zip') {
+      // Importazione da un file ZIP
+      return new Promise((resolve) => {
+        dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+          type: 'warning',
+          title: 'Conferma Sovrascrittura',
+          message: 'Stai per importare un file ZIP. Questo sovrascriverà i dati esistenti. Vuoi continuare?',
+          buttons: ['Sì', 'No'],
+          defaultId: 1 // 'No' come default
+        }).then(({ response }) => {
+          if (response === 0) { // Utente ha cliccato 'Sì'
+            yauzl.open(filePath, { lazyEntries: true }, (err, zipfile) => {
               if (err) {
-                console.error(`Errore nella lettura dell'entry ${entry.fileName}:`, err);
-                zipfile.readEntry();
-                return;
+                console.error('Errore durante l\'apertura del file ZIP:', err);
+                return resolve({ success: false, error: `Errore durante l'apertura del file ZIP: ${err.message}` });
               }
 
-              readStream.on('end', () => {
-                zipfile.readEntry();
+              zipfile.on('entry', (entry) => {
+                // Estrai solo i file pertinenti (vitelli_data.json, config_data.json, migration_status.json)
+                const targetPath = path.join(appDataDir, entry.fileName);
+
+                // Prevenire la path traversal (se il file ZIP contiene path relative come ../)
+                if (path.relative(appDataDir, targetPath).startsWith('..')) {
+                  console.warn(`Tentativo di path traversal bloccato: ${entry.fileName}`);
+                  zipfile.readEntry(); // Passa alla prossima entry
+                  return;
+                }
+
+                if (entry.fileName === path.basename(calfDataFilePath) ||
+                    entry.fileName === path.basename(configFilePath) ||
+                    entry.fileName === path.basename(migrationStatusFilePath)) {
+                  zipfile.openReadStream(entry, (err, readStream) => {
+                    if (err) {
+                      console.error(`Errore durante la lettura dell'entry ${entry.fileName}:`, err);
+                      return resolve({ success: false, error: `Errore durante la lettura del file ${entry.fileName}: ${err.message}` });
+                    }
+
+                    const writeStream = fs.createWriteStream(targetPath);
+                    readStream.pipe(writeStream);
+
+                    writeStream.on('finish', () => {
+                      console.log(`File estratto: ${entry.fileName} a ${targetPath}`);
+                      zipfile.readEntry(); // Continua a leggere la prossima entry
+                    });
+
+                    writeStream.on('error', (err) => {
+                      console.error(`Errore durante la scrittura del file ${entry.fileName}:`, err);
+                      resolve({ success: false, error: `Errore durante la scrittura del file ${entry.fileName}: ${err.message}` });
+                    });
+                  });
+                } else {
+                  // Salta le entry non pertinenti
+                  zipfile.readEntry();
+                }
               });
 
-              const writeStream = fs.createWriteStream(targetPath);
-              readStream.pipe(writeStream);
+              zipfile.on('end', () => {
+                return resolve({ success: true, message: 'Dati importati con successo dal file ZIP!' });
+              });
+
+              zipfile.on('error', (err) => {
+                console.error('Errore durante l\'estrazione del file ZIP:', err);
+                return resolve({ success: false, error: `Errore durante l'estrazione del file ZIP: ${err.message}` });
+              });
+
+              zipfile.readEntry(); // Inizia a leggere le entry
             });
-          });
-
-          zipfile.on('end', () => {
-            return resolve({ success: true, message: 'Dati importati con successo dal file ZIP!' });
-          });
-
-          zipfile.on('error', (err) => {
-            console.error('Errore durante l\'estrazione del file ZIP:', err);
-            return resolve({ success: false, error: `Errore durante l'estrazione del file ZIP: ${err.message}` });
-          });
-
-          zipfile.readEntry(); // Inizia a leggere le entry
+          } else {
+            resolve({ success: false, message: 'Importazione annullata.' });
+          }
         });
       });
     } else {
@@ -307,6 +325,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
-// Nota importante: Non utilizzare API del DOM (come 'document', 'window') direttamente in questo file (main.js).
-// Queste API sono disponibili solo nel processo di rendering (all'interno di vitelli.js).

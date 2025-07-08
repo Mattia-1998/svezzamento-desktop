@@ -4,18 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Applicazione Svezzamento Vitelli</title>
+    <!-- Carica Tailwind CSS per lo styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carica jsPDF per l'esportazione in PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Carica jspdf-autotable per la creazione di tabelle in PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <!-- Carica SheetJS (xlsx) per l'esportazione in Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-900">
+    <!-- Il punto di mount per l'applicazione React -->
     <div id="root"></div>
 
+    <!-- Carica React e ReactDOM dal CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="./vitelli.js"></script>
-    
+
     <script>
       // Assicurati che l'app venga inizializzata quando il DOM è pronto
       document.addEventListener('DOMContentLoaded', () => {
@@ -23,7 +29,7 @@
           if (!rootElement) {
               console.error('ERRORE: Elemento con ID "root" non trovato nel DOM. Si prega di verificare il file index.html.');
               // Potresti voler creare l'elemento root se non esiste, ma è meglio che esista nell'HTML
-              return; 
+              return;
           }
           // Verifica che React e ReactDOM siano disponibili
           if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {

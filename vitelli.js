@@ -1241,8 +1241,10 @@ const App = () => {
   const [showCalfDetailModal, setShowCalfDetailModal] = React.useState(false);
   const [showCalfSpecificSettingsModal, setShowCalfSpecificSettingsModal] = React.useState(false);
   const [selectedCalf, setSelectedCalf] = React.useState(null);
+  const [appInfo, setAppInfo] = React.useState({ name: '', version: '' });
   const [showImportExportModal, setShowImportExportModal] = React.useState(false);
-  const [currentClock, setCurrentClock] = React.useState('');
+  // Rimosso lo stato `currentClock` da qui, poiché l'orologio è ora gestito direttamente nel DOM da index.html
+  // e `useEffect` aggiorna direttamente l'elemento DOM.
 
   // vitelliDisplayedData: Derived state that includes calculated details for display
   const [vitelliDisplayedData, setVitelliDisplayedData] = React.useState([]);
@@ -1816,6 +1818,19 @@ const App = () => {
 
   // Initial load: loads configuration and raw calf data using Electron API
   React.useEffect(() => {
+    const fetchAppInfo = async () => {
+      try {
+        const info = await window.electronAPI.getAppInfo();
+        setAppInfo(info);
+      } catch (error) {
+        console.error("Errore nel recuperare le informazioni dell'app:", error);
+      }
+    };
+
+    fetchAppInfo();
+  }, []);
+
+  React.useEffect(() => {
     loadAllData();
   }, [loadAllData]); // Depend on loadAllData
 
@@ -1825,7 +1840,6 @@ const App = () => {
     let totLatteGiornaliero = 0.0;
     let totAcquaGiornaliera = 0.0; // This will only sum water for powder reconstitution
     let totPolvereGiornaliera = 0.0; // This will only sum powder
-
     let totLattePerPasto = 0.0;
     let totAcquaPerPasto = 0.0; // This will only sum water for powder reconstitution
     let totPolverePerPastoTotal = 0.0; // This will only sum powder
@@ -2387,7 +2401,12 @@ const App = () => {
   // Update clock
   React.useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentClock(new Date().toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      const clockText = new Date().toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      // Aggiorna direttamente l'elemento DOM dell'orologio nel footer fisso
+      const fixedClockElement = document.getElementById('fixedClockDisplay');
+      if (fixedClockElement) {
+        fixedClockElement.textContent = clockText;
+      }
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -2709,7 +2728,44 @@ const App = () => {
             " Importa/Esporta Dati"
           )
         ),
-        React.createElement("p", { className: "text-sm font-semibold text-gray-400" }, currentClock) // Set default dark theme colors
+        // Nuovo contenitore per orologio e pulsante "Aiuto" allineati a destra
+        React.createElement(
+          "div",
+          { className: "flex items-center space-x-3" },
+          React.createElement(
+            "div",
+            { id: "fixedClockDisplay", className: "text-gray-200 text-sm font-mono" },
+            // Il contenuto dell'orologio verrà aggiornato dal useEffect
+          ),
+          React.createElement(
+            "button",
+            {
+              onClick: () => {
+                const infoModal = document.createElement('div');
+                infoModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
+                infoModal.innerHTML = ` 
+                  <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-md text-gray-100">
+                    <h3 class="text-xl font-bold mb-4 text-blue-400">${appInfo.name || 'Svezzamento Vitelli'}</h3>
+                    <div class="space-y-2 text-sm">
+                      <p><strong>Versione:</strong> ${appInfo.version || 'N/A'}</p>
+                      <p><strong>Sviluppatore:</strong> Giroldini Mattia</p>
+                      <p><strong>Contatti:</strong> mattia.giroldini1998@gmail.com</p>
+                    </div>
+                    <div class="flex justify-end mt-6">
+                      <button id="closeInfoModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
+                    </div>
+                  </div>
+                `;
+                document.body.appendChild(infoModal);
+                document.getElementById('closeInfoModal').onclick = () => {
+                  document.body.removeChild(infoModal);
+                };
+              },
+              className: "w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-200 text-sm font-bold",
+            },
+            "i"
+          )
+        )
       )
     ),
     React.createElement(GlobalSettingsModal, {
@@ -2744,35 +2800,5 @@ const App = () => {
   );
 };
 
-// Render the App component into the DOM
-document.addEventListener('DOMContentLoaded', () => {
-  const container = document.getElementById('root');
-  if (!container) {
-    console.error('ERROR: Element with ID "root" not found in the DOM. Ensure your index.html has <div id="root"></div>.');
-    return;
-  }
-
-  if (typeof React === 'undefined') {
-    console.error('ERROR: React is not defined. Ensure react.production.min.js is loaded BEFORE vitelli.js.');
-    return;
-  }
-
-  if (typeof ReactDOM === 'undefined') {
-    console.error('ERROR: ReactDOM is not defined. Ensure react-dom.production.min.js is loaded BEFORE vitelli.js.');
-    return;
-  }
-
-  if (typeof App === 'undefined') {
-    console.error('ERROR: The App component is not defined. This usually means vitelli.js is loaded incorrectly or there\'s a syntax error preventing its definition.');
-    return;
-  } else {
-  }
-
-  try {
-    const root = ReactDOM.createRoot(container);
-    root.render(React.createElement(App, null));
-  } catch (renderError) {
-    console.error('FATAL ERROR: Failed to render React App.', renderError);
-    container.innerHTML = '<div style="color: red; text-align: center; margin-top: 50px;">Errore critico durante il caricamento dell\'applicazione. Controlla la console per i dettagli.</div>';
-  }
-});
+// Il codice di rendering finale è stato spostato in index.html
+// Rimosso il blocco document.addEventListener('DOMContentLoaded', ...) da qui.
