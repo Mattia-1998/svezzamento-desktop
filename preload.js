@@ -16,15 +16,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveConfig: (config) => ipcRenderer.invoke('save-config', config),
     loadConfig: () => ipcRenderer.invoke('load-config'),
 
-    // Funzioni per la gestione della migrazione da localStorage a file system
-    checkMigrationStatus: () => ipcRenderer.invoke('check-migration-status'),
-    markMigrationDone: () => ipcRenderer.invoke('mark-migration-done'),
-
-    // Nuove API per l'esportazione/importazione ZIP.
-    // Queste chiameranno i gestori IPC definiti in main.js.
+    // Nuove API per l'esportazione/importazione ZIP/JSON.
     exportAllDataZip: () => ipcRenderer.invoke('export-all-data-zip'),
     importDataFromFile: () => ipcRenderer.invoke('import-data-from-file'),
+
+    // Funzione per ottenere la versione dell'app dal main process
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
 });
 
-// Messaggio di log per confermare che lo script preload è stato caricato.
-console.log("preload.js caricato e electronAPI esposta al contesto del renderer.");
+// Messaggio di debug per verificare che preload.js sia stato caricato
+console.log('preload.js caricato.');

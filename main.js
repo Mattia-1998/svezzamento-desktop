@@ -290,6 +290,17 @@ app.whenReady().then(() => {
     }
   });
 
+  // Gestore IPC per ottenere la versione dell'app dal package.json
+  ipcMain.handle('get-app-version', async () => {
+    try {
+      const packagePath = path.join(__dirname, 'package.json');
+      const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+      return packageJson.version || '?';
+    } catch (e) {
+      return '?';
+    }
+  });
+
   app.on('activate', () => {
     // Su macOS è comune ri-creare una finestra nell'app quando l'icona del dock viene cliccata
     // e non ci sono altre finestre aperte.

@@ -774,7 +774,7 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
       setSettings(
         configToEdit.map((item) => {
           let initialDailyLiters = 0;
-          if (calfData.milk_type === 'cow_milk') { // If the calf is set to cow milk mode
+          if (calfData.milk_type === 'cow_milk') { // If the calf is set to cow milk
             initialDailyLiters = (item.dose_kg || 0) / 7; // Here, dose_kg represents weekly cow milk liters
           } else { // Default or if powdered milk
             const initialDailyPowderKg = (item.dose_kg || 0) / 7;
@@ -977,16 +977,17 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
           React.createElement(
             "tr",
             { className: "bg-gray-700" }, // Changed to dark mode background
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Settimana"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Litri al Giorno (L)"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Pasti"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Concentrazione (%)"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte Giornaliero"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Acqua al Giorno"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Polvere di latte / Giorno"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte per pasto"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Acqua per Pasto"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Polvere di latte / Pasto")
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Settimana"),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Data Inizio"),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Data Fine"),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Dose Latte/G (L)"),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Acqua / G."),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Polvere di latte / G."),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Latte / pasto"),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Acqua / pasto"),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Polvere di latte / Pasto"),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Pasti/G"),
+            React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Concentrazione (%)")
           )
         ),
         React.createElement(
@@ -1000,51 +1001,32 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
               lattePerPasto,
               acquaPerPasto,
               polverePerPasto,
-            } = calculateRowDetails(item, isCowMilkModeActive);
+            } = calculateRowDetails(item);
 
             return React.createElement(
               "tr",
               { key: item.settimana, className: "border-b border-gray-600" }, // Changed to dark mode border
-              React.createElement("td", { className: "py-2 px-3 text-center" }, "Settimana ", item.settimana),
-              React.createElement(
-                "td",
-                { className: "py-2 px-3 text-center" },
-                React.createElement("input", {
-                  type: "text", // Changed from number to text
-                  className: `w-20 p-1 border rounded text-center bg-gray-600 text-gray-100 appearance-none [appearance:textfield]`, // Added Tailwind classes
-                  value: item.litri_giorno_input, // Value is now a string
-                  onChange: (e) => updateSettingField(index, "litri_giorno_input", e.target.value),
-                  // Disabled based on milk type is handled by the overall modal logic for cow milk
-                })
-              ),
-              React.createElement(
-                "td",
-                { className: "py-2 px-3 text-center" },
-                React.createElement("input", {
-                  type: "text", // Changed from number to text
-                  className: `w-16 p-1 border rounded text-center bg-gray-600 text-gray-100 appearance-none [appearance:textfield]`, // Added Tailwind classes
-                  value: item.pasti, // Value is now a string
-                  onChange: (e) => updateSettingField(index, "pasti", e.target.value),
-                  disabled: isCowMilkModeActive, // Only disable if cow milk mode
-                })
-              ),
-              React.createElement(
-                "td",
-                { className: "py-2 px-3 text-center" },
-                React.createElement("input", {
-                  type: "text", // Changed from number to text
-                  className: `w-16 p-1 border rounded text-center bg-gray-600 text-gray-100 appearance-none [appearance:textfield] ${isCowMilkModeActive ? 'bg-gray-500 cursor-not-allowed' : ''}`, // Added Tailwind classes and disabled styling
-                  value: item.concentrazione_percentuale, // Value is now a string
-                  onChange: (e) => updateSettingField(index, "concentrazione_percentuale", e.target.value),
-                  disabled: isCowMilkModeActive,
-                })
-              ),
-              React.createElement("td", { className: "py-2 px-3 text-center" }, latteGiornaliero.toFixed(2), " L"),
-              React.createElement("td", { className: "py-2 px-3 text-center" }, acquaGiornaliera.toFixed(2), " L"),
-              React.createElement("td", { className: "py-2 px-3 text-center" }, polvereGiornaliera.toFixed(2), " kg"),
-              React.createElement("td", { className: "py-2 px-3 text-center" }, lattePerPasto.toFixed(2), " L"),
-              React.createElement("td", { className: "py-2 px-3 text-center" }, acquaPerPasto.toFixed(2), " L"),
-              React.createElement("td", { className: "py-2 px-3 text-center" }, polverePerPasto.toFixed(2), " kg")
+              React.createElement("td", { className: "py-3 px-4" }, item.settimana),
+              React.createElement("td", { className: "py-3 px-4" }, React.createElement("input", {
+                type: "text",
+                className: "w-full bg-transparent border-none focus:outline-none text-gray-100", // Set default dark theme colors
+                value: item.data_inizio,
+                onChange: (e) => updateSettingField(index, "data_inizio", e.target.value),
+              })),
+              React.createElement("td", { className: "py-3 px-4" }, React.createElement("input", {
+                type: "text",
+                className: "w-full bg-transparent border-none focus:outline-none text-gray-100", // Set default dark theme colors
+                value: item.data_fine,
+                onChange: (e) => updateSettingField(index, "data_fine", e.target.value),
+              })),
+              React.createElement("td", { className: "py-3 px-4" }, latteGiornaliero.toFixed(2)),
+              React.createElement("td", { className: "py-3 px-4" }, acquaGiornaliera.toFixed(2)),
+              React.createElement("td", { className: "py-3 px-4" }, polvereGiornaliera.toFixed(2)),
+              React.createElement("td", { className: "py-3 px-4" }, lattePerPasto.toFixed(2)),
+              React.createElement("td", { className: "py-3 px-4" }, acquaPerPasto.toFixed(2)),
+              React.createElement("td", { className: "py-3 px-4" }, polverePerPasto.toFixed(2)),
+              React.createElement("td", { className: "py-3 px-4" }, item.pasti),
+              React.createElement("td", { className: "py-3 px-4" }, typeof item.concentrazione_percentuale === 'number' ? `${item.concentrazione_percentuale.toFixed(1)}%` : item.concentrazione_percentuale)
             );
           })
         )
@@ -1053,179 +1035,54 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
     React.createElement(
       "div",
       { className: "flex justify-end space-x-4" },
-      !isUsingGlobalDefaults && // Mostra il pulsante di reset solo se le impostazioni non sono già quelle globali di default
-      React.createElement(
-        "button",
-        {
-          onClick: handleReset,
-          className: "px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-200",
-        },
-        "Ripristina Impostazioni Globali"
-      ),
       React.createElement(
         "button",
         {
           onClick: handleSave,
           className: "px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200",
         },
-        "Salva Impostazioni Individuali"
+        "Salva Impostazioni"
       )
     )
   );
 };
 
-
-// Componente per la finestra di Importa/Esporta
-const ImportExportModal = ({ show, onClose, onRefreshData }) => { // Added onRefreshData prop
-  const handleExport = async () => {
-    try {
-      const response = await window.electronAPI.exportAllDataZip();
-      if (response.success) {
-        const successModal = document.createElement('div');
-        successModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
-        successModal.innerHTML = `
-          <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
-            <h3 class="text-lg font-semibold mb-4">Esportazione Completata</h3>
-            <p class="mb-6">Backup creato con successo in: ${response.filePath}</p>
-            <div class="flex justify-end">
-              <button id="closeSuccessModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(successModal);
-        document.getElementById('closeSuccessModal').onclick = () => {
-          document.body.removeChild(successModal);
-        };
-      } else {
-        const errorModal = document.createElement('div');
-        errorModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
-        errorModal.innerHTML = `
-          <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
-            <h3 class="text-lg font-semibold mb-4 text-red-400">Errore Esportazione</h3>
-            <p class="mb-6">Errore durante la creazione del backup: ${response.error}</p>
-            <div class="flex justify-end">
-              <button id="closeErrorModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(errorModal);
-        document.getElementById('closeErrorModal').onclick = () => {
-          document.body.removeChild(errorModal);
-        };
-      }
-    } catch (error) {
-      console.error("Errore durante la chiamata exportAllDataZip:", error);
-      const errorModal = document.createElement('div');
-      errorModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
-      errorModal.innerHTML = `
-        <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
-          <h3 class="text-lg font-semibold mb-4 text-red-400">Errore Esportazione</h3>
-          <p class="mb-6">Errore generico durante l'esportazione: ${error.message}</p>
-          <div class="flex justify-end">
-            <button id="closeErrorModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(errorModal);
-      document.getElementById('closeErrorModal').onclick = () => {
-        document.body.removeChild(errorModal);
-      };
+// Funzione per ottenere la versione dal backend (Electron preload)
+function useAppVersion() {
+  const [version, setVersion] = React.useState('');
+  React.useEffect(() => {
+    if (window && window.electronAPI && window.electronAPI.getAppVersion) {
+      window.electronAPI.getAppVersion().then(setVersion);
+    } else {
+      // fallback: mostra "?" se non disponibile
+      setVersion('?');
     }
-  };
+  }, []);
+  return version;
+}
 
-  const handleImport = async () => {
-    try {
-      const response = await window.electronAPI.importDataFromFile();
-      if (response.success) {
-        const successModal = document.createElement('div');
-        successModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
-        successModal.innerHTML = `
-          <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
-            <h3 class="text-lg font-semibold mb-4">Importazione Completata</h3>
-            <p class="mb-6">${response.message}</p>
-            <div class="flex justify-end">
-              <button id="closeSuccessModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(successModal);
-        document.getElementById('closeSuccessModal').onclick = () => {
-          document.body.removeChild(successModal);
-          onRefreshData(); // Trigger data refresh in App component
-        };
-      } else {
-        const errorModal = document.createElement('div');
-        errorModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
-        errorModal.innerHTML = `
-          <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
-            <h3 class="text-lg font-semibold mb-4 text-red-400">Errore Importazione</h3>
-            <p class="mb-6">Errore durante l'importazione: ${response.error || response.message}</p>
-            <div class="flex justify-end">
-              <button id="closeErrorModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(errorModal);
-        document.getElementById('closeErrorModal').onclick = () => {
-          document.body.removeChild(errorModal);
-        };
-      }
-    } catch (error) {
-      console.error("Errore durante la chiamata importDataFromFile:", error);
-      const errorModal = document.createElement('div');
-      errorModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
-      errorModal.innerHTML = `
-        <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
-          <h3 class="text-lg font-semibold mb-4 text-red-400">Errore Importazione</h3>
-          <p class="mb-6">Errore generico durante l'importazione: ${error.message}</p>
-          <div class="flex justify-end">
-            <button id="closeErrorModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(errorModal);
-      document.getElementById('closeErrorModal').onclick = () => {
-        document.body.removeChild(errorModal);
-      };
-    }
-  };
-
-
+// Modale Info Programma
+const AboutModal = ({ onClose }) => {
+  const version = useAppVersion();
   return React.createElement(
-    Modal,
-    { show: show, onClose: onClose, title: "Importa/Esporta Dati" },
+    "div",
+    { className: "fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]" },
     React.createElement(
       "div",
-      { className: "flex flex-col space-y-6 text-gray-100" }, // Changed to dark mode text
-      React.createElement("h3", { className: "text-lg font-semibold text-center" }, "Gestione Backup Dati"),
-      React.createElement("p", { className: "text-center text-sm text-gray-300" }, "Esporta o importa i file di configurazione e i dati dei vitelli."), // Changed to dark mode text
+      { className: "bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100" },
+      React.createElement("h2", { className: "text-xl font-bold mb-4" }, "Info Programma"),
+      React.createElement("p", null, React.createElement("b", null, "Nome:"), " Svezzamento Desktop"),
+      React.createElement("p", null, React.createElement("b", null, "Versione:"), ` ${version}`),
+      React.createElement("p", null, React.createElement("b", null, "Creatore:"), " Giroldini Mattia"),
+      React.createElement("p", null, React.createElement("b", null, "Contatti:"), " mattia.giroldini1998@gmail.com"),
       React.createElement(
-        "div",
-        { className: "flex flex-col space-y-4" },
-        React.createElement("h4", { className: "font-semibold text-center" }, "Funzioni di Backup"),
-        React.createElement(
-          "button",
-          {
-            onClick: handleExport,
-            className: "px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition duration-200 flex items-center justify-center",
-          },
-          React.createElement(HardDriveIcon, { size: 18, className: "mr-2" }),
-          " Esporta Backup (ZIP)"
-        ),
-        React.createElement(
-          "button",
-          {
-            onClick: handleImport,
-            className: "px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-200 cursor-pointer text-center flex items-center justify-center",
-          },
-          React.createElement(HardDriveIcon, { size: 18, className: "mr-2" }),
-          " Importa Backup (ZIP/JSON)"
-        )
+        "button",
+        { onClick: onClose, className: "mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" },
+        "Chiudi"
       )
     )
   );
 };
-
 
 // Main App Component
 const App = () => {
@@ -1242,6 +1099,7 @@ const App = () => {
   const [showCalfSpecificSettingsModal, setShowCalfSpecificSettingsModal] = React.useState(false);
   const [selectedCalf, setSelectedCalf] = React.useState(null);
   const [showImportExportModal, setShowImportExportModal] = React.useState(false);
+  const [showAboutModal, setShowAboutModal] = React.useState(false);
   const [currentClock, setCurrentClock] = React.useState('');
 
   // vitelliDisplayedData: Derived state that includes calculated details for display
@@ -1411,7 +1269,7 @@ const App = () => {
         columnStyles: {
           0: { cellWidth: 25 }, // Matricola
           1: { cellWidth: 25 }, // Data di Nascita
-          2: { cellWidth: 20 }, // Tipo Latte
+          2: { cellWidth:  20 }, // Tipo Latte
           3: { cellWidth: 35 }, // Da -> A
           4: { cellWidth: 25 }, // Dose Totale Giornaliera
           5: { cellWidth: 25 }, // Dose Acqua Giornaliera
@@ -2346,9 +2204,9 @@ const App = () => {
         <p class="mb-6">Impostazioni individuali per il vitello ${matricola} salvate con successo.</p>
         <div class="flex justify-end">
           <button id="closeSuccessModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
-          </div>
         </div>
-      `;
+      </div>
+    `;
     document.body.appendChild(successModal);
     document.getElementById('closeSuccessModal').onclick = () => {
       document.body.removeChild(successModal);
@@ -2422,7 +2280,7 @@ const App = () => {
           "button",
           {
             onClick: addCalf,
-            className: "flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200 shadow-md",
+            className: "flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200",
             title: "Aggiungi Riga",
           },
           React.createElement(PlusIcon, { size: 20, className: "mr-2" }),
@@ -2456,7 +2314,7 @@ const App = () => {
                 document.body.removeChild(infoModal);
               };
             },
-            className: "flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200 shadow-md",
+            className: "flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200",
             title: "Ricalcola Dosi",
           },
           React.createElement(RefreshCcwIcon, { size: 20, className: "mr-2" }),
@@ -2524,7 +2382,7 @@ const App = () => {
               "tr",
               { className: "bg-gray-700" }, // Set default dark theme colors
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Matricola"),
-              React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Data di nascita"),
+              React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Data di Nascita"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Tipo Latte"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Da \u2192 A"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Dose Totale Giornaliera"),
@@ -2709,38 +2567,23 @@ const App = () => {
             " Importa/Esporta Dati"
           )
         ),
-        React.createElement("p", { className: "text-sm font-semibold text-gray-400" }, currentClock) // Set default dark theme colors
-      )
-    ),
-    React.createElement(GlobalSettingsModal, {
-      show: showGlobalSettingsModal,
-      onClose: () => setShowGlobalSettingsModal(false),
-      config: config,
-      onSaveSettings: handleSaveGlobalSettings,
-    }),
-    selectedCalf &&
-      React.createElement(CalfDetailModal, {
-        show: showCalfDetailModal,
-        onClose: () => setShowCalfDetailModal(false),
-        calfData: selectedCalf,
-        globalConfig: config,
-        exportToPdf: exportDataToPdf, // Now correctly referencing the moved function
-        exportToXlsx: exportToXlsx, // Now correctly referencing the moved function
-      }),
-    selectedCalf &&
-      React.createElement(CalfSpecificSettingsModal, {
-        show: showCalfSpecificSettingsModal,
-        onClose: () => setShowCalfSpecificSettingsModal(false),
-        calfData: selectedCalf,
-        globalConfig: config,
-        onSaveIndividualCalfSettings: handleSaveIndividualCalfSettings,
-        onResetIndividualCalfSettings: handleResetIndividualCalfSettings,
-      }),
-    React.createElement(ImportExportModal, {
-      show: showImportExportModal,
-      onClose: () => setShowImportExportModal(false),
-      onRefreshData: loadAllData, // Pass the function to refresh all data after import
-    })
+        React.createElement(
+          "div",
+          { className: "flex items-center space-x-3 ml-auto" },
+          React.createElement("p", { className: "text-sm font-semibold text-gray-400" }, currentClock),
+          React.createElement(
+            "button",
+            {
+              onClick: () => setShowAboutModal(true),
+              className: "flex items-center justify-center p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-200 shadow-md ml-4",
+              style: { width: '32px', height: '32px', minWidth: '32px', minHeight: '32px', fontSize: '16px', lineHeight: '1' }
+            },
+            React.createElement('span', { style: { fontWeight: 'bold', fontSize: '18px', display: 'block', width: '100%', textAlign: 'center' } }, 'i')
+          )
+        )
+      ),
+      showAboutModal && React.createElement(AboutModal, { onClose: () => setShowAboutModal(false) })
+    )
   );
 };
 
