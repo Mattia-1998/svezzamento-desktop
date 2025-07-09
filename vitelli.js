@@ -1898,7 +1898,7 @@ const App = () => {
               dataInizioSettimanaCorrente.setDate(dataDt.getDate() + settimaneIdx * 7);
               const dataFineSettimana = new Date(dataInizioSettimanaCorrente);
               dataFineSettimana.setDate(dataInizioSettimanaCorrente.getDate() + 6);
-              datesRangeText = `${formatDate(dataInizioSettimanaCorrente)} -> ${formatDate(dataFineSettimana)}`;
+              datesRangeText = `${formatDate(dataInizioSettimanaCorrente)}\nA\n${formatDate(dataFineSettimana)}`;
 
               pasti = currentWeekConfig.pasti || 2;
 
@@ -2417,7 +2417,7 @@ const App = () => {
     React.createElement(
       "div",
       { className: "container mx-auto p-6 bg-gray-700 rounded-lg shadow-xl" }, // Set default dark theme colors
-      React.createElement("h1", { className: "text-3xl font-bold text-center mb-6 text-blue-400" }, "Calcolo Polvere di Latte"), // Set default dark theme colors
+      React.createElement("h1", { className: "text-3xl font-bold text-center mb-6 text-blue-400" }, "Svezzamento Vitelli"), // Set default dark theme colors
       React.createElement(
         "div",
         { className: "flex flex-wrap items-center gap-4 mb-6 p-4 bg-gray-600 rounded-md shadow-sm" }, // Set default dark theme colors
@@ -2545,7 +2545,7 @@ const App = () => {
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Matricola"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Data di nascita"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Tipo Latte"),
-              React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Da \u2192 A"),
+              React.createElement("th", { className: "py-3 px-4 text-center border-b" }, "Da \u2192 A"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Dose Totale Giornaliera"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Dose per Pasto"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Giorni allo Svezzamento"),
@@ -2581,8 +2581,8 @@ const App = () => {
                         className: "w-full bg-transparent border-none focus:outline-none text-gray-100", // Set default dark theme colors
                       })
                     ),
-                    React.createElement("td", { className: "py-3 px-4 whitespace-pre-wrap" }, calf.milk_type === 'cow_milk' ? 'Vacca' : 'Polvere'),
-                    React.createElement("td", { className: "py-3 px-4 whitespace-pre-wrap" }, calf.calculated_details.dates_range_text || "N/A"),
+                    React.createElement("td", { className: "py-3 px-4" }, calf.milk_type === 'cow_milk' ? 'Vacca' : 'Polvere'),
+                    React.createElement("td", { className: "py-3 px-4 whitespace-pre-wrap text-center" }, calf.calculated_details.dates_range_text || "N/A"),
                     React.createElement("td", { className: "py-3 px-4 whitespace-pre-wrap" }, calf.calculated_details.dose_giornaliera_text || "N/A"),
                     React.createElement("td", { className: "py-3 px-4 whitespace-pre-wrap" }, calf.calculated_details.dose_per_pasto_text || "N/A"),
                     React.createElement("td", { className: "py-3 px-4 text-center" }, calf.calculated_details.giorni_mancanti_text || "N/A"),
@@ -2745,7 +2745,7 @@ const App = () => {
                 infoModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
                 infoModal.innerHTML = ` 
                   <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-md text-gray-100">
-                    <h3 class="text-xl font-bold mb-4 text-blue-400">${appInfo.name || 'Svezzamento Vitelli'}</h3>
+                    <h3 class="text-xl font-bold mb-4 text-blue-400">Svezzamento Vitelli</h3>
                     <div class="space-y-2 text-sm">
                       <p><strong>Versione:</strong> ${appInfo.version || 'N/A'}</p>
                       <p><strong>Sviluppatore:</strong> Giroldini Mattia</p>
