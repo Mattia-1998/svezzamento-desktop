@@ -1249,12 +1249,18 @@ const App = () => {
   // vitelliDisplayedData: Derived state that includes calculated details for display
   const [vitelliDisplayedData, setVitelliDisplayedData] = React.useState([]);
   const [totals, setTotals] = React.useState({
-    latte: 0, // Total daily liquid milk (powder reconstituted OR cow milk)
-    acqua: 0, // Total daily water for powder reconstitution
-    polvere: 0, // Total daily powder
-    lattePasto: 0, // Total per-feeding liquid milk
-    acquaPasto: 0, // Total per-feeding water for powder reconstitution
-    polverePastoTotal: 0 // Total per-feeding powder
+    // Powdered milk totals
+    lattePolvere: 0,
+    acqua: 0,
+    polvere: 0,
+    lattePolverePasto: 0,
+    acquaPasto: 0,
+    polverePastoTotal: 0,
+    // Cow milk totals
+    latteVacca: 0,
+    latteVaccaPasto: 0,
+    // Flag to check if any cow milk calf is present
+    hasCowMilk: false
   });
   const [totalKgWeaningFromToday, setTotalKgWeaningFromToday] = React.useState(0);
 
@@ -1372,17 +1378,36 @@ const App = () => {
       // All Calves PDF
       doc.setFontSize(18);
       doc.text("Dati Vitelli e Programma di Svezzamento", doc.internal.pageSize.width / 2, 20, { align: 'center' }); // Adjusted Y position
+      
+      let yPos = 35;
       doc.setFontSize(12);
-      doc.text(`Dosi Totali Giornaliere:`, 20, 35); // Adjusted X, Y position
-      doc.text(totals.latte.toFixed(2) + " L", 30, 45); // Adjusted X, Y position
-      doc.text(totals.acqua.toFixed(2) + " L", 30, 55); // Adjusted X, Y position
-      doc.text(totals.polvere.toFixed(2) + " kg", 30, 65); // Adjusted X, Y position
+      doc.text(`Dosi Totali Giornaliere:`, 20, yPos); yPos += 10;
+      doc.text(`Latte in polvere (ricostituito): ${totals.lattePolvere.toFixed(2)} L`, 30, yPos); yPos += 10;
+      doc.text(`Acqua: ${totals.acqua.toFixed(2)} L`, 30, yPos); yPos += 10;
+      doc.text(`Polvere di latte: ${totals.polvere.toFixed(2)} kg`, 30, yPos); yPos += 10;
+      if (totals.hasCowMilk) {
+        yPos += 2; // Aggiunge un piccolo spazio
+        doc.setDrawColor(150, 150, 150); // Colore grigio per la linea
+        doc.line(25, yPos, 95, yPos); // Disegna una linea di separazione
+        yPos += 8; // Spazio dopo la linea
+        doc.text(`Latte di vacca: ${totals.latteVacca.toFixed(2)} L`, 30, yPos); yPos += 10;
+      }
 
-      doc.text(`Dosi Totali per Pasto:`, 20, 75); // Adjusted X, Y position
-      doc.text(totals.lattePasto.toFixed(2) + " L", 30, 85); // Adjusted X, Y position
-      doc.text(totals.acquaPasto.toFixed(2) + " L", 30, 95); // Adjusted X, Y position
-      doc.text(totals.polverePastoTotal.toFixed(2) + " kg (per pasto in media)", 30, 105); // Adjusted X, Y position
-      doc.text(`Totale kg polvere di latte necessaria da oggi: ${totalKgWeaningFromToday.toFixed(2)} kg`, 20, 120); // Adjusted X, Y position
+      yPos += 5; // Add some space
+      doc.text(`Dosi Totali per Pasto:`, 20, yPos); yPos += 10;
+      doc.text(`Latte in polvere (ricostituito): ${totals.lattePolverePasto.toFixed(2)} L`, 30, yPos); yPos += 10;
+      doc.text(`Acqua: ${totals.acquaPasto.toFixed(2)} L`, 30, yPos); yPos += 10;
+      doc.text(`Polvere di latte: ${totals.polverePastoTotal.toFixed(2)} kg (per pasto in media)`, 30, yPos); yPos += 10;
+      if (totals.hasCowMilk) {
+        yPos += 2; // Aggiunge un piccolo spazio
+        doc.setDrawColor(150, 150, 150); // Colore grigio per la linea
+        doc.line(25, yPos, 95, yPos); // Disegna una linea di separazione
+        yPos += 8; // Spazio dopo la linea
+        doc.text(`Latte di vacca: ${totals.latteVaccaPasto.toFixed(2)} L (per pasto)`, 30, yPos); yPos += 10;
+      }
+
+      yPos += 5;
+      doc.text(`Totale kg polvere di latte necessaria da oggi: ${totalKgWeaningFromToday.toFixed(2)} kg`, 20, yPos);
 
 
       const headers = [
@@ -1403,7 +1428,7 @@ const App = () => {
       ]);
 
       doc.autoTable({
-        startY: 130, // Adjusted startY
+        startY: yPos + 10, // Adjusted startY
         head: headers,
         body: body,
         theme: 'grid',
@@ -1837,14 +1862,19 @@ const App = () => {
   // Pure function to calculate details for calves and overall totals
   // This function does NOT modify state directly, it returns the calculated values.
   const calculateCalfDetailsAndTotals = React.useCallback((currentRawCalves, globalConfig) => {
-    let totLatteGiornaliero = 0.0;
-    let totAcquaGiornaliera = 0.0; // This will only sum water for powder reconstitution
-    let totPolvereGiornaliera = 0.0; // This will only sum powder
-    let totLattePerPasto = 0.0;
-    let totAcquaPerPasto = 0.0; // This will only sum water for powder reconstitution
-    let totPolverePerPastoTotal = 0.0; // This will only sum powder
+    let totLattePolvereGiornaliero = 0.0;
+    let totLatteVaccaGiornaliero = 0.0;
+    let totAcquaGiornaliera = 0.0;
+    let totPolvereGiornaliera = 0.0;
+    let totLattePolverePerPasto = 0.0;
+    let totLatteVaccaPerPasto = 0.0;
+    let totAcquaPerPasto = 0.0;
+    let totPolverePerPastoTotal = 0.0;
     let currentTotalKgWeaningFromToday = 0.0; // This will only sum powder remaining
-
+    let hasCowMilkCalf = false;
+    let activePowderCalfCount = 0;
+    let activeCowMilkCalfCount = 0;
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -1982,17 +2012,20 @@ const App = () => {
 
       // Aggregate totals based on milk type and weaning status
       if (giorniPassati < DURATA_SVEZZAMENTO_GIORNI) {
-          totLatteGiornaliero += latteGiornaliero; // Sum actual liquid milk (powder reconstituted or cow milk)
-          if (!isCowMilk) { // Only sum water and powder for non-cow milk (powdered milk)
-              totAcquaGiornaliera += acquaGiornaliera;
-              totPolvereGiornaliera += polvereGiornaliera;
-              totAcquaPerPasto += acquaPerPasto;
-              totPolverePerPastoTotal += polverePerPastoValue;
-              totLattePerPasto += lattePerPasto; // Also add for powdered milk to its specific total
-          } else {
-             // For cow milk, lattePerPasto has already been set, no other totals for powder/water
-             totLattePerPasto += lattePerPasto; // Add cow milk per-pasto to total
-          }
+        if (isCowMilk) {
+            hasCowMilkCalf = true;
+            activeCowMilkCalfCount++;
+            totLatteVaccaGiornaliero += latteGiornaliero;
+            totLatteVaccaPerPasto += lattePerPasto;
+        } else {
+            activePowderCalfCount++;
+            totLattePolvereGiornaliero += latteGiornaliero;
+            totAcquaGiornaliera += acquaGiornaliera;
+            totPolvereGiornaliera += polvereGiornaliera;
+            totLattePolverePerPasto += lattePerPasto;
+            totAcquaPerPasto += acquaPerPasto;
+            totPolverePerPastoTotal += polverePerPastoValue;
+        }
       }
 
       return {
@@ -2018,12 +2051,15 @@ const App = () => {
     return {
         calculatedCalves,
         totals: {
-            latte: totLatteGiornaliero,
+            lattePolvere: totLattePolvereGiornaliero,
+            latteVacca: totLatteVaccaGiornaliero,
             acqua: totAcquaGiornaliera,
             polvere: totPolvereGiornaliera,
-            lattePasto: totLattePerPasto,
+            lattePolverePasto: totLattePolverePerPasto,
+            latteVaccaPasto: totLatteVaccaPerPasto,
             acquaPasto: totAcquaPerPasto,
-            polverePastoTotal: totPolverePerPastoTotal
+            polverePastoTotal: totPolverePerPastoTotal,
+            hasCowMilk: hasCowMilkCalf,
         },
         totalKgWeaningFromToday: currentTotalKgWeaningFromToday
     };
@@ -2035,8 +2071,7 @@ const App = () => {
     // It calls the pure calculation function and updates the display states.
     if (!config.latte_settimanale || config.latte_settimanale.length === 0) {
       console.warn("Configurazione 'latte_settimanale' globale non disponibile, salto il ricalcolo per la visualizzazione.");
-      setVitelliDisplayedData([]);
-      setTotals({ latte: 0, acqua: 0, polvere: 0, lattePasto: 0, acquaPasto: 0, polverePastoTotal: 0 });
+      setVitelliDisplayedData([]); // Clear display data
       setTotalKgWeaningFromToday(0);
       return;
     }
@@ -2652,43 +2687,28 @@ const App = () => {
           "div",
           { className: "flex-1 p-5 border border-gray-600 rounded-lg shadow-md bg-gray-700" }, // Set default dark theme colors
           React.createElement("h3", { className: "text-lg font-bold text-blue-300 mb-2 text-center" }, "Dose Totale Giornaliera"), // Set default dark theme colors
-          React.createElement(
-            "p",
-            { className: "whitespace-pre-wrap text-center font-medium text-blue-400" }, // Set default dark theme colors
-            "Latte: ",
-            totals.latte.toFixed(2),
-            " L ",
-            React.createElement("br", null),
-            "Acqua: ",
-            totals.acqua.toFixed(2),
-            " L ",
-            React.createElement("br", null),
-            "Polvere di latte: ",
-            totals.polvere.toFixed(2),
-            " kg"
-          )
+            React.createElement(
+              "div",
+              { className: "whitespace-pre-wrap text-center font-medium text-blue-400" }, // Set default dark theme colors
+              "Latte in polvere (ricostituito): ", totals.lattePolvere.toFixed(2), " L", React.createElement("br", null),
+              "Acqua: ", totals.acqua.toFixed(2), " L", React.createElement("br", null),
+              "Polvere di latte: ", totals.polvere.toFixed(2), " kg",
+              totals.hasCowMilk && React.createElement(React.Fragment, null, React.createElement("hr", { className: "my-2 border-gray-600" }), "Latte di vacca: ", totals.latteVacca.toFixed(2), " L")
+            )
         ),
         React.createElement(
           "div",
           { className: "flex-1 p-5 border border-gray-600 rounded-lg shadow-md bg-gray-700" }, // Set default dark theme colors
           React.createElement("h3", { className: "text-lg font-bold text-blue-300 mb-2 text-center" }, "Dose Totale per Pasto"), // Set default dark theme colors
-          React.createElement(
-            "p",
-            { className: "whitespace-pre-wrap text-center font-medium text-blue-400" }, // Set default dark theme colors
-            "Latte: ",
-            totals.lattePasto.toFixed(2),
-            " L ",
-            React.createElement("br", null),
-            "Acqua: ",
-            totals.acquaPasto.toFixed(2),
-            " L ",
-            React.createElement("br", null),
-            "Polvere di latte: ",
-            totals.polverePastoTotal.toFixed(2),
-            " kg ",
-            React.createElement("br", null),
-            "(per pasto in media)"
-          )
+            React.createElement(
+              "div",
+              { className: "whitespace-pre-wrap text-center font-medium text-blue-400" }, // Set default dark theme colors
+              "Latte in polvere (ricostituito): ", totals.lattePolverePasto.toFixed(2), " L", React.createElement("br", null),
+              "Acqua: ", totals.acquaPasto.toFixed(2), " L", React.createElement("br", null),
+              "Polvere di latte: ", totals.polverePastoTotal.toFixed(2), " kg", React.createElement("br", null),
+              "(per pasto in media)",
+              totals.hasCowMilk && React.createElement(React.Fragment, null, React.createElement("hr", { className: "my-2 border-gray-600" }), "Latte di vacca: ", totals.latteVaccaPasto.toFixed(2), " L (per pasto)")
+            )
         ),
         React.createElement(
           "div",
@@ -2750,6 +2770,7 @@ const App = () => {
                       <p><strong>Versione:</strong> ${appInfo.version || 'N/A'}</p>
                       <p><strong>Sviluppatore:</strong> Giroldini Mattia</p>
                       <p><strong>Contatti:</strong> mattia.giroldini1998@gmail.com</p>
+                      <p class="mt-4 pt-4 border-t border-gray-600"><strong>Copyright:</strong> © ${new Date().getFullYear()} Giroldini Mattia. Tutti i diritti riservati.</p>
                     </div>
                     <div class="flex justify-end mt-6">
                       <button id="closeInfoModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
