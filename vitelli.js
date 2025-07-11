@@ -640,6 +640,33 @@ const GlobalSettingsModal = ({ show, onClose, config, onSaveSettings }) => {
     };
   };
 
+  // Funzione per aggiungere una nuova settimana
+  const addWeek = () => {
+    setSettings((prevSettings) => {
+      const lastWeek = prevSettings[prevSettings.length - 1];
+      const newSettimana = lastWeek ? lastWeek.settimana + 1 : 1;
+      const newWeek = {
+        settimana: newSettimana,
+        dose_kg: 0, // Default to 0 kg/week for new entries
+        descrizione: `Settimana ${newSettimana}`,
+        pasti: '2', // Default to 2 meals
+        concentrazione_percentuale: '10.0', // Default to 10% concentration
+        litri_giorno_input: '0.00', // Default to 0 liters/day for input
+      };
+      return [...prevSettings, newWeek];
+    });
+  };
+
+  // Funzione per rimuovere l'ultima settimana
+  const removeWeek = () => {
+    setSettings((prevSettings) => {
+      if (prevSettings.length > 1) { // Ensure at least one week remains
+        return prevSettings.slice(0, prevSettings.length - 1);
+      }
+      return prevSettings; // Do not remove if only one week exists
+    });
+  };
+
   const handleSave = () => {
     const updatedLatteSettimanale = settings.map((item) => {
       const { polvereGiornaliera } = calculateRowDetails(item);
@@ -659,6 +686,31 @@ const GlobalSettingsModal = ({ show, onClose, config, onSaveSettings }) => {
     Modal,
     // Passa una classe di larghezza maggiore per la modale delle impostazioni
     { show: show, onClose: onClose, title: "Impostazioni Consumo Latte Globali", maxWidthClass: 'max-w-6xl' },
+    React.createElement(
+      "div",
+      { className: "mb-4 flex justify-between items-center" },
+      React.createElement(
+        "div",
+        { className: "flex space-x-2" },
+        React.createElement(
+          "button",
+          {
+            onClick: addWeek,
+            className: "px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200 text-sm",
+          },
+          "Aggiungi Settimana"
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: removeWeek,
+            className: "px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-200 text-sm",
+            disabled: settings.length <= 1, // Disable if only one week remains
+          },
+          "Rimuovi Ultima Settimana"
+        )
+      )
+    ),
     React.createElement(
       "div",
       { className: "overflow-x-auto mb-4" },
@@ -687,15 +739,7 @@ const GlobalSettingsModal = ({ show, onClose, config, onSaveSettings }) => {
           "tbody",
           null,
           settings.map((item, index) => {
-            const {
-              latteGiornaliero,
-              acquaGiornaliera,
-              polvereGiornaliera,
-              lattePerPasto,
-              acquaPerPasto,
-              polverePerPasto,
-            } = calculateRowDetails(item);
-
+            const { latteGiornaliero, acquaGiornaliera, polvereGiornaliera, lattePerPasto, acquaPerPasto, polverePerPasto, } = calculateRowDetails(item);
             return React.createElement(
               "tr",
               { key: item.settimana, className: "border-b border-gray-600" }, // Changed to dark mode border
@@ -746,10 +790,7 @@ const GlobalSettingsModal = ({ show, onClose, config, onSaveSettings }) => {
       { className: "flex justify-end space-x-4" },
       React.createElement(
         "button",
-        {
-          onClick: handleSave,
-          className: "px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200",
-        },
+        { onClick: handleSave, className: "px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200", },
         "Salva Impostazioni"
       )
     )
@@ -765,24 +806,23 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
     if (calfData) {
       // Set the milk type from calfData, default to 'powdered_milk'
       setCurrentMilkType(calfData.milk_type || 'powdered_milk');
-
       // Prioritize individual config if available, otherwise use global default
       const configToEdit = calfData.individual_config && calfData.individual_config.length > 0
                            ? calfData.individual_config
                            : globalConfig.latte_settimanale;
-
       setSettings(
         configToEdit.map((item) => {
           let initialDailyLiters = 0;
-          if (calfData.milk_type === 'cow_milk') { // If the calf is set to cow milk mode
+          if (calfData.milk_type === 'cow_milk') {
+            // If the calf is set to cow milk mode
             initialDailyLiters = (item.dose_kg || 0) / 7; // Here, dose_kg represents weekly cow milk liters
-          } else { // Default or if powdered milk
+          } else {
+            // Default or if powdered milk
             const initialDailyPowderKg = (item.dose_kg || 0) / 7;
             initialDailyLiters = initialDailyPowderKg * (100 / (item.concentrazione_percentuale || 10.0));
           }
           return {
             ...item,
-            // Convert to string for text input, handle potential NaN
             litri_giorno_input: isNaN(initialDailyLiters) ? '0.00' : initialDailyLiters.toFixed(2),
             pasti: String(item.pasti || 1),
             concentrazione_percentuale: isNaN(item.concentrazione_percentuale) ? '10.0' : item.concentrazione_percentuale.toFixed(1),
@@ -793,29 +833,28 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
   }, [calfData, globalConfig.latte_settimanale]);
 
   const updateSettingField = (index, field, value) => {
-    setSettings((prevSettings) =>
-      prevSettings.map((item, i) => {
-        if (i === index) {
-          let parsedValue = parseFloat(value);
-          if (isNaN(parsedValue) || parsedValue < 0) {
-            parsedValue = 0; // Default to 0 for non-numeric or negative input
-          }
-
-          if (field === "pasti") {
-            // Ensure 'pasti' is an integer and at least 1
-            let parsedPasti = parseInt(value);
-            if (isNaN(parsedPasti) || parsedPasti < 1) {
-              parsedPasti = 1;
-            }
-            return { ...item, [field]: String(parsedPasti) };
-          } else if (field === "concentrazione_percentuale") {
-            return { ...item, [field]: parsedValue.toFixed(1) };
-          } else { // litri_giorno_input
-            return { ...item, [field]: parsedValue.toFixed(2) };
-          }
+    setSettings((prevSettings) => prevSettings.map((item, i) => {
+      if (i === index) {
+        let parsedValue = parseFloat(value);
+        if (isNaN(parsedValue) || parsedValue < 0) {
+          parsedValue = 0; // Default to 0 for non-numeric or negative input
         }
-        return item;
-      })
+
+        if (field === "pasti") {
+          // Ensure 'pasti' is an integer and at least 1
+          let parsedPasti = parseInt(value);
+          if (isNaN(parsedPasti) || parsedPasti < 1) {
+            parsedPasti = 1;
+          }
+          return { ...item, [field]: String(parsedPasti) };
+        } else if (field === "concentrazione_percentuale") {
+          return { ...item, [field]: parsedValue.toFixed(1) };
+        } else { // litri_giorno_input
+          return { ...item, [field]: parsedValue.toFixed(2) };
+        }
+      }
+      return item;
+    })
     );
   };
 
@@ -837,10 +876,8 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
     const litriGiornalieri = parseFloat(item.litri_giorno_input) || 0;
     const pasti = parseInt(item.pasti) || 1;
     const concentrazione = parseFloat(item.concentrazione_percentuale) || 10.0;
-
     const polvereGiornaliera = litriGiornalieri * (concentrazione / 100);
     const acquaGiornaliera = litriGiornalieri - polvereGiornaliera;
-
     const lattePerPasto = pasti > 0 ? litriGiornalieri / pasti : 0;
     const acquaPerPasto = pasti > 0 ? acquaGiornaliera / pasti : 0;
     const polverePerPasto = pasti > 0 ? polvereGiornaliera / pasti : 0;
@@ -855,24 +892,58 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
     };
   };
 
-  const handleSave = () => {
-    const isCowMilkMode = currentMilkType === 'cow_milk';
-
-    const updatedLatteSettimanale = settings.map((item) => {
-      const { polvereGiornaliera } = calculateRowDetails(item, false); // Always calculate powder for saving dose_kg if not cow milk
-      const litriGiornalieriInput = parseFloat(item.litri_giorno_input) || 0;
-
-      return {
-        settimana: item.settimana,
-        // If cow milk, 'dose_kg' will effectively store the total weekly *cow milk liters*.
-        // If powdered milk, 'dose_kg' stores the total weekly *powder kg'.
-        dose_kg: isCowMilkMode ? litriGiornalieriInput * 7 : polvereGiornaliera * 7, // Direct input for cow milk, weekly
-        descrizione: item.descrizione,
-        pasti: parseInt(item.pasti) || 2, // Ensure parsing back to number
-        concentrazione_percentuale: isCowMilkMode ? 0 : (parseFloat(item.concentrazione_percentuale) || 10.0), // Ensure parsing back to number
+  // Funzione per aggiungere una nuova settimana alle impostazioni individuali
+  const addIndividualWeek = () => {
+    setSettings((prevSettings) => {
+      const lastWeek = prevSettings[prevSettings.length - 1];
+      const newSettimana = lastWeek ? lastWeek.settimana + 1 : 1;
+      const newWeek = {
+        settimana: newSettimana,
+        dose_kg: 0, // Default to 0 kg/week or liters/week
+        descrizione: `Settimana ${newSettimana}`,
+        pasti: '2', // Default to 2 meals
+        concentrazione_percentuale: currentMilkType === 'cow_milk' ? 'N/A' : '10.0', // N/A for cow milk
+        litri_giorno_input: '0.00', // Default to 0 liters/day for input
       };
+      return [...prevSettings, newWeek];
     });
-    onSaveIndividualCalfSettings(calfData.matricola, updatedLatteSettimanale, currentMilkType);
+  };
+
+  // Funzione per rimuovere l'ultima settimana dalle impostazioni individuali
+  const removeIndividualWeek = () => {
+    setSettings((prevSettings) => {
+      if (prevSettings.length > 1) { // Ensure at least one week remains
+        return prevSettings.slice(0, prevSettings.length - 1);
+      }
+      return prevSettings; // Do not remove if only one week exists
+    });
+  };
+
+  const handleSave = () => {
+    const updatedIndividualCalfSettings = settings.map((item) => {
+      if (currentMilkType === 'cow_milk') {
+        // For cow milk, dose_kg directly stores weekly liters
+        const litriGiornalieri = parseFloat(item.litri_giorno_input) || 0;
+        return {
+          settimana: item.settimana,
+          dose_kg: litriGiornalieri * 7, // Store weekly liters
+          descrizione: item.descrizione,
+          pasti: parseInt(item.pasti) || 2,
+          concentrazione_percentuale: 'N/A', // Not applicable
+        };
+      } else {
+        // For powdered milk
+        const { polvereGiornaliera } = calculateRowDetails(item, false); // Pass false for powdered milk mode
+        return {
+          settimana: item.settimana,
+          dose_kg: polvereGiornaliera * 7, // Convert daily powder to weekly
+          descrizione: item.descrizione,
+          pasti: parseInt(item.pasti) || 2,
+          concentrazione_percentuale: parseFloat(item.concentrazione_percentuale) || 10.0,
+        };
+      }
+    });
+    onSaveIndividualCalfSettings(calfData.matricola, updatedIndividualCalfSettings, currentMilkType);
     onClose();
   };
 
@@ -963,6 +1034,31 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
         "p",
         { className: "text-orange-300 text-sm italic" }, // Changed to dark mode text
         "Quando la modalità 'Latte Vacca' è attiva, i campi 'Acqua', 'Polvere' e 'Concentrazione' sono disabilitati. Il valore 'Litri al Giorno' rappresenta direttamente i litri di latte vaccino da somministrare."
+      )
+    ),
+    React.createElement(
+      "div",
+      { className: "mb-4 flex justify-between items-center" },
+      React.createElement(
+        "div",
+        { className: "flex space-x-2" },
+        React.createElement(
+          "button",
+          {
+            onClick: addIndividualWeek,
+            className: "px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200 text-sm",
+          },
+          "Aggiungi Settimana"
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: removeIndividualWeek,
+            className: "px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-200 text-sm",
+            disabled: settings.length <= 1, // Disable if only one week remains
+          },
+          "Rimuovi Ultima Settimana"
+        )
       )
     ),
     React.createElement(
@@ -2668,6 +2764,7 @@ const App = () => {
                     )
                   )
                 )
+
               : React.createElement(
                   "tr",
                   null,
