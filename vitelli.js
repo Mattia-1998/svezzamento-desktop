@@ -42,9 +42,6 @@ const parseDateToYYYYMMDD = (dateString) => {
 };
 
 
-// Durata totale dello svezzamento in giorni (12 settimane)
-const DURATA_SVEZZAMENTO_GIORNI = 12 * 7;
-
 // Componente ToggleSwitch
 const ToggleSwitch = ({ checked, onChange, label }) => {
   return React.createElement(
@@ -1995,6 +1992,9 @@ const App = () => {
                            ? calf.individual_config
                            : globalConfig.latte_settimanale;
 
+      // Calcola la durata totale dello svezzamento dinamicamente in base alla configurazione
+      const durataSvezzamentoGiorni = (calfConfig?.length || 0) * 7;
+
       const isCowMilk = calf.milk_type === 'cow_milk';
 
       const dNascitaStr = calf.data_nascita;
@@ -2013,7 +2013,7 @@ const App = () => {
             const diffTime = Math.abs(today - dataDt);
             giorniPassati = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-            const giorniAlloSvezzamento = DURATA_SVEZZAMENTO_GIORNI - giorniPassati;
+            const giorniAlloSvezzamento = durataSvezzamentoGiorni - giorniPassati;
             giorniMancantiText = giorniAlloSvezzamento > 0 ? `${giorniAlloSvezzamento} giorni` : "Svezzato";
 
             if (calfConfig && calfConfig.length > 0) {
@@ -2072,7 +2072,7 @@ const App = () => {
                 const daysIntoCurrentWeek = giorniPassati % 7;
                 const remainingDaysInCurrentWeek = 7 - daysIntoCurrentWeek;
 
-                if (giorniPassati < DURATA_SVEZZAMENTO_GIORNI) {
+                if (giorniPassati < durataSvezzamentoGiorni) {
                   if (currentWeekIndex < calfConfig.length) {
                     const currentConfigItem = calfConfig[currentWeekIndex];
                     const dailyPowderCurrentWeek = (currentConfigItem.dose_kg || 0) / 7;
@@ -2107,7 +2107,7 @@ const App = () => {
       }
 
       // Aggregate totals based on milk type and weaning status
-      if (giorniPassati < DURATA_SVEZZAMENTO_GIORNI) {
+      if (giorniPassati < durataSvezzamentoGiorni) {
         if (isCowMilk) {
             hasCowMilkCalf = true;
             activeCowMilkCalfCount++;
