@@ -1325,6 +1325,7 @@ const WeeklyScheduleOptionsModal = ({ show, onClose, onGenerate }) => {
   const [numDays, setNumDays] = React.useState(7);
   const [startDate, setStartDate] = React.useState('');
   const [endDate, setEndDate] = React.useState('');
+  const [contentOption, setContentOption] = React.useState('both'); // 'both', 'detailsOnly', 'totalsOnly'
 
   const handleGenerate = () => {
     if (option === 'xdays') {
@@ -1385,7 +1386,7 @@ const WeeklyScheduleOptionsModal = ({ show, onClose, onGenerate }) => {
       }
     }
 
-    onGenerate({ option, numDays, startDate, endDate });
+    onGenerate({ option, numDays, startDate, endDate, contentOption });
     onClose();
   };
 
@@ -1446,6 +1447,27 @@ const WeeklyScheduleOptionsModal = ({ show, onClose, onGenerate }) => {
                 setEndDate('');
               }
             }, disabled: option !== 'daterange', className: `${inputBaseClasses} w-40` })
+        )
+      ),
+      React.createElement("hr", { className: "border-gray-600 my-2" }),
+      React.createElement(
+        "div",
+        { className: "flex flex-col space-y-2" },
+        React.createElement("label", { className: "font-semibold text-gray-200" }, "Contenuto del PDF:"),
+        React.createElement(
+          "div", { className: "flex items-center" },
+          React.createElement("input", { type: "radio", id: "contentBoth", name: "contentOption", value: "both", checked: contentOption === 'both', onChange: (e) => setContentOption(e.target.value), className: radioBaseClasses }),
+          React.createElement("label", { htmlFor: "contentBoth", className: labelBaseClasses }, "Dettagli e Riepilogo Totali")
+        ),
+        React.createElement(
+          "div", { className: "flex items-center" },
+          React.createElement("input", { type: "radio", id: "contentDetails", name: "contentOption", value: "detailsOnly", checked: contentOption === 'detailsOnly', onChange: (e) => setContentOption(e.target.value), className: radioBaseClasses }),
+          React.createElement("label", { htmlFor: "contentDetails", className: labelBaseClasses }, "Solo Dettagli Vitelli")
+        ),
+        React.createElement(
+          "div", { className: "flex items-center" },
+          React.createElement("input", { type: "radio", id: "contentTotals", name: "contentOption", value: "totalsOnly", checked: contentOption === 'totalsOnly', onChange: (e) => setContentOption(e.target.value), className: radioBaseClasses }),
+          React.createElement("label", { htmlFor: "contentTotals", className: labelBaseClasses }, "Solo Riepilogo Totali")
         )
       ),
       React.createElement("div", { className: "flex justify-end pt-4" },
@@ -2035,32 +2057,117 @@ const App = () => {
       }).filter(row => row !== null);
 
       if (tableData.length > 0) {
-        doc.autoTable({
-            startY: yPos,
-            margin: { left: 14, right: 14 },
-            head: [["Matricola", "Tipo", "Pasti", "L/Pasto", "A/Pasto", "P/Pasto", "L/Giorno", "A/Giorno", "P/Giorno", "Descrizione"]],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold' },
-            styles: { fontSize: 7, cellPadding: 1.5, valign: 'middle' },
-            columnStyles: {
-                0: { cellWidth: 25 }, // Matricola
-                1: { cellWidth: 15 }, // Tipo
-                2: { cellWidth: 15 }, // Pasti
-                3: { cellWidth: 20 }, // L/Pasto
-                4: { cellWidth: 20 }, // A/Pasto
-                5: { cellWidth: 20 }, // P/Pasto
-                6: { cellWidth: 20 }, // L/Giorno
-                7: { cellWidth: 20 }, // A/Giorno
-                8: { cellWidth: 20 }, // P/Giorno
-                9: { cellWidth: 74 }  // Descrizione
+        const totalsForDay = tableData.reduce((acc, row) => {
+            const isCowMilk = row[1] === 'Vacca';
+            const lattePasto = parseFloat(row[3]) || 0;
+            const acquaPasto = parseFloat(row[4]) || 0;
+            const polverePasto = parseFloat(row[5]) || 0;
+            const latteGiorno = parseFloat(row[6]) || 0;
+            const acquaGiorno = parseFloat(row[7]) || 0;
+            const polvereGiorno = parseFloat(row[8]) || 0;
+
+            if (isCowMilk) {
+                acc.cow.latteGiorno += latteGiorno;
+                acc.cow.lattePasto += lattePasto;
+            } else {
+                acc.powder.latteGiorno += latteGiorno;
+                acc.powder.acquaGiorno += acquaGiorno;
+                acc.powder.polvereGiorno += polvereGiorno;
+                acc.powder.lattePasto += lattePasto;
+                acc.powder.acquaPasto += acquaPasto;
+                acc.powder.polverePasto += polverePasto;
             }
+            return acc;
+        }, {
+            powder: { latteGiorno: 0, acquaGiorno: 0, polvereGiorno: 0, lattePasto: 0, acquaPasto: 0, polverePasto: 0 },
+            cow: { latteGiorno: 0, lattePasto: 0 }
         });
-        yPos = doc.autoTable.previous.finalY;
+
+        const hasPowder = totalsForDay.powder.latteGiorno > 0;
+        const hasCow = totalsForDay.cow.latteGiorno > 0;
+
+        if (options.contentOption === 'both' || options.contentOption === 'detailsOnly') {
+            doc.autoTable({
+                startY: yPos,
+                margin: { left: 14, right: 14 },
+                head: [["Matricola", "Tipo", "Pasti", "Latte/Pasto", "Acqua/Pasto", "Polvere/Pasto", "Latte/Giorno", "Acqua/Giorno", "Polvere/Giorno", "Descrizione"]],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold' },
+                styles: { fontSize: 7, cellPadding: 1.5, valign: 'middle' },
+                columnStyles: {
+                    0: { cellWidth: 25 }, // Matricola
+                    1: { cellWidth: 15 }, // Tipo
+                    2: { cellWidth: 15 }, // Pasti
+                    3: { cellWidth: 22 }, // Latte/Pasto
+                    4: { cellWidth: 22 }, // Acqua/Pasto
+                    5: { cellWidth: 22 }, // Polvere/Pasto
+                    6: { cellWidth: 22 }, // Latte/Giorno
+                    7: { cellWidth: 22 }, // Acqua/Giorno
+                    8: { cellWidth: 22 }, // Polvere/Giorno
+                    9: { cellWidth: 68 }  // Descrizione
+                }
+            });
+            yPos = doc.autoTable.previous.finalY;
+        }
+
+        if (options.contentOption === 'both' || options.contentOption === 'totalsOnly') {
+            if (hasPowder || hasCow) {
+                // Controlla lo spazio per il riepilogo, aggiunge una nuova pagina se necessario
+                if (yPos > doc.internal.pageSize.height - 35) {
+                    doc.addPage();
+                    yPos = 15;
+                }
+                yPos += 5;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text("Riepilogo Totali del Giorno:", 14, yPos);
+                yPos += 2;
+
+                if (hasPowder) {
+                    doc.autoTable({
+                        startY: yPos,
+                        margin: { left: 14, right: 14 },
+                        head: [['Latte in Polvere', 'Latte Totale (L)', 'Acqua Totale (L)', 'Polvere Totale (kg)']],
+                        body: [
+                            ['Dose Giornaliera', totalsForDay.powder.latteGiorno.toFixed(2), totalsForDay.powder.acquaGiorno.toFixed(2), totalsForDay.powder.polvereGiorno.toFixed(2)],
+                            ['Dose per Pasto', totalsForDay.powder.lattePasto.toFixed(2), totalsForDay.powder.acquaPasto.toFixed(2), totalsForDay.powder.polverePasto.toFixed(2)]
+                        ],
+                        theme: 'grid',
+                        headStyles: { fillColor: [96, 125, 139], fontSize: 8, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 8 },
+                        styles: { cellPadding: 1.5, valign: 'middle' },
+                        didDrawPage: (data) => { yPos = data.cursor.y; }
+                    });
+                    yPos = doc.autoTable.previous.finalY;
+                }
+
+                if (hasCow) {
+                    if (hasPowder) yPos += 2;
+                    doc.autoTable({
+                        startY: yPos,
+                        margin: { left: 14, right: 14 },
+                        head: [['Latte di Vacca', 'Latte Totale (L)']],
+                        body: [
+                            ['Dose Giornaliera', totalsForDay.cow.latteGiorno.toFixed(2)],
+                            ['Dose per Pasto', totalsForDay.cow.lattePasto.toFixed(2)]
+                        ],
+                        theme: 'grid',
+                        headStyles: { fillColor: [96, 125, 139], fontSize: 8, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 8 },
+                        styles: { cellPadding: 1.5, valign: 'middle' },
+                        didDrawPage: (data) => { yPos = data.cursor.y; }
+                    });
+                    yPos = doc.autoTable.previous.finalY;
+                }
+            }
+        }
       } else {
-          doc.setFontSize(10);
-          doc.text("Nessun vitello in svezzamento per questo giorno.", 14, yPos);
-          yPos += 10;
+          if (options.contentOption === 'both' || options.contentOption === 'detailsOnly') {
+              doc.setFontSize(10);
+              doc.text("Nessun vitello in svezzamento per questo giorno.", 14, yPos);
+              yPos += 10;
+          }
       }
     }
 
