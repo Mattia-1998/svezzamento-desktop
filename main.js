@@ -311,6 +311,26 @@ app.whenReady().then(() => {
     }
   });
 
+  // Gestore per mostrare il menu di ordinamento
+  ipcMain.on('show-sort-menu', (event) => {
+    const template = [
+      {
+        label: 'Ordina per Data',
+        click: () => { event.sender.send('sort-table', 'date'); }
+      },
+      {
+        label: 'Ordina per Nome',
+        click: () => { event.sender.send('sort-table', 'name'); }
+      }
+    ];
+    const menu = Menu.buildFromTemplate(template);
+    // La finestra del browser da cui proviene l'evento
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      menu.popup({ window: win });
+    }
+  });
+
   app.on('activate', () => {
     // Su macOS è comune ri-creare una finestra nell'app quando l'icona del dock viene cliccata
     // e non ci sono altre finestre aperte.

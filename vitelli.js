@@ -1529,6 +1529,10 @@ const App = () => {
   const [showWeeklyScheduleOptionsModal, setShowWeeklyScheduleOptionsModal] = React.useState(false);
   const [showExportOptionsModal, setShowExportOptionsModal] = React.useState(false);
   // Rimosso lo stato `currentClock` da qui, poiché l'orologio è ora gestito direttamente nel DOM da index.html
+  const [matricolaSortDirection, setMatricolaSortDirection] = React.useState('ascending');
+  // Nuovo stato per la visibilità del menu di ordinamento
+  const [showSortMenu, setShowSortMenu] = React.useState(false);
+  const sortMenuRef = React.useRef(null);
   // e `useEffect` aggiorna direttamente l'elemento DOM.
 
   // vitelliDisplayedData: Derived state that includes calculated details for display
@@ -1593,13 +1597,33 @@ const App = () => {
     if (isSingleCalf && dataToExport && schedule) {
       // Single Calf PDF
       doc.setFontSize(18);
-      doc.text(`Programma Svezzamento Vitello: ${dataToExport.matricola}`, doc.internal.pageSize.width / 2, 20, { align: 'center' }); // Adjusted Y position
+      doc.text(`Programma Svezzamento Vitello: ${dataToExport.matricola}`, doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+      // Dati per la tabella dei dettagli
+      const calfDetailsBody = [
+        ['Matricola', dataToExport.matricola],
+        ['Data di Nascita', dataToExport.data_nascita],
+        ['Tipo di Latte', dataToExport.milk_type === 'cow_milk' ? 'Latte Vacca' : 'Latte in Polvere'],
+        ['Giorni allo Svezzamento', dataToExport.calculated_details.giorni_mancanti_text || 'N/A']
+      ];
+
+      // Stile per la tabella dei dettagli
+      const detailTableOptions = {
+        theme: 'grid',
+        headStyles: { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [236, 240, 241] },
+        styles: { fontSize: 10, cellPadding: 3 },
+        tableWidth: 'auto',
+        columnStyles: { 0: { fontStyle: 'bold' } },
+        margin: { left: 14 }
+      };
+
+      doc.autoTable({ ...detailTableOptions, head: [['Dettaglio Vitello', 'Valore']], body: calfDetailsBody, startY: 30 });
+
+      let yPos = doc.autoTable.previous.finalY + 10;
       doc.setFontSize(12);
-      doc.text(`Matricola: ${dataToExport.matricola}`, 20, 35); // Adjusted X, Y position
-      doc.text(`Data di Nascita: ${dataToExport.data_nascita}`, 20, 45); // Adjusted X, Y position
-      doc.text(`Tipo di Latte: ${dataToExport.milk_type === 'cow_milk' ? 'Latte Vacca' : 'Latte in Polvere'}`, 20, 55); // Adjusted X, Y position
-      doc.text(`Giorni allo Svezzamento: ${dataToExport.calculated_details.giorni_mancanti_text || 'N/A'}`, 20, 65); // Adjusted X, Y position
-      doc.text("Programma Svezzamento Settimanale:", 20, 80); // Adjusted X, Y position
+      doc.text("Programma Svezzamento Settimanale:", 14, yPos);
+      yPos += 8;
 
       const scheduleHeaders = [
         ["Settimana", "Data Inizio", "Data Fine", "Dose Latte/G (L)", "Acqua / G.", "Latte in Polvere / G.", "Latte / pasto", "Acqua / pasto", "Polvere / Pasto", "Pasti/G", "Concentrazione (%)"]
@@ -1619,7 +1643,7 @@ const App = () => {
       ]);
 
       doc.autoTable({
-        startY: 90, // Adjusted startY
+        startY: yPos,
         head: scheduleHeaders,
         body: scheduleBody,
         theme: 'grid',
@@ -1663,57 +1687,108 @@ const App = () => {
       // All Calves PDF
       doc.setFontSize(18);
       doc.text("Dati Vitelli e Programma di Svezzamento", doc.internal.pageSize.width / 2, 20, { align: 'center' }); // Adjusted Y position
-      
-      let yPos = 35;
-      doc.setFontSize(12);
-      doc.text(`Dosi Totali Giornaliere:`, 20, yPos); yPos += 10;
-      doc.text(`Latte in polvere (ricostituito): ${totals.lattePolvere.toFixed(2)} L`, 30, yPos); yPos += 10;
-      doc.text(`Acqua: ${totals.acqua.toFixed(2)} L`, 30, yPos); yPos += 10;
-      doc.text(`Latte in Polvere: ${totals.polvere.toFixed(2)} kg`, 30, yPos); yPos += 10;
+
+      let yPos = 30;
+
+      // --- Riepilogo Dosi Totali ---
+      const summaryHeaderStyle = { fillColor: [44, 62, 80], textColor: [255, 255, 255], fontStyle: 'bold' }; // Dark blue-gray
+      const summaryBodyStyle = { fillColor: [236, 240, 241] }; // Light gray
+      const tableOptions = {
+        theme: 'grid',
+        headStyles: summaryHeaderStyle,
+        bodyStyles: summaryBodyStyle,
+        styles: { fontSize: 9, cellPadding: 2 },
+        tableWidth: 'auto',
+        columnStyles: { 0: { fontStyle: 'bold' } },
+      };
+
+      // Dati per le tabelle di riepilogo
+      const dailyTotalsBody = [];
+      if (totals.lattePolvere > 0 || !totals.hasCowMilk) {
+        dailyTotalsBody.push(['Latte in polvere (ricostituito)', `${totals.lattePolvere.toFixed(2)} L`]);
+        dailyTotalsBody.push(['Acqua', `${totals.acqua.toFixed(2)} L`]);
+        dailyTotalsBody.push(['Latte in Polvere', `${totals.polvere.toFixed(2)} kg`]);
+      }
       if (totals.hasCowMilk) {
-        yPos += 2; // Aggiunge un piccolo spazio
-        doc.setDrawColor(150, 150, 150); // Colore grigio per la linea
-        doc.line(25, yPos, 95, yPos); // Disegna una linea di separazione
-        yPos += 8; // Spazio dopo la linea
-        doc.text(`Latte di vacca: ${totals.latteVacca.toFixed(2)} L`, 30, yPos); yPos += 10;
+        dailyTotalsBody.push(['Latte di vacca', `${totals.latteVacca.toFixed(2)} L`]);
       }
 
-      yPos += 5; // Add some space
-      doc.text(`Dosi Totali per Pasto:`, 20, yPos); yPos += 10;
-      doc.text(`Latte in polvere (ricostituito): ${totals.lattePolverePasto.toFixed(2)} L`, 30, yPos); yPos += 10;
-      doc.text(`Acqua: ${totals.acquaPasto.toFixed(2)} L`, 30, yPos); yPos += 10;
-      doc.text(`Latte in Polvere: ${totals.polverePastoTotal.toFixed(2)} kg (per pasto in media)`, 30, yPos); yPos += 10;
+      const perMealTotalsBody = [];
+      if (totals.lattePolverePasto > 0 || !totals.hasCowMilk) {
+        perMealTotalsBody.push(['Latte in polvere (ricostituito)', `${totals.lattePolverePasto.toFixed(2)} L`]);
+        perMealTotalsBody.push(['Acqua', `${totals.acquaPasto.toFixed(2)} L`]);
+        perMealTotalsBody.push(['Latte in Polvere (media)', `${totals.polverePastoTotal.toFixed(2)} kg`]);
+      }
       if (totals.hasCowMilk) {
-        yPos += 2; // Aggiunge un piccolo spazio
-        doc.setDrawColor(150, 150, 150); // Colore grigio per la linea
-        doc.line(25, yPos, 95, yPos); // Disegna una linea di separazione
-        yPos += 8; // Spazio dopo la linea
-        doc.text(`Latte di vacca: ${totals.latteVaccaPasto.toFixed(2)} L (per pasto)`, 30, yPos); yPos += 10;
+        perMealTotalsBody.push(['Latte di vacca', `${totals.latteVaccaPasto.toFixed(2)} L`]);
       }
 
-      yPos += 5;
-      doc.text(`Totale kg Latte in Polvere necessaria da oggi: ${totalKgWeaningFromToday.toFixed(2)} kg`, 20, yPos);
+      // Disegna le tabelle una sotto l'altra per garantire la visibilità
+      doc.autoTable({
+        ...tableOptions,
+        head: [['Dosi Totali Giornaliere', 'Quantità']],
+        body: dailyTotalsBody,
+        startY: yPos,
+        margin: { left: 14, right: 14 }
+      });
+
+      yPos = doc.autoTable.previous.finalY + 5; // Aggiunge un piccolo spazio
+
+      doc.autoTable({
+        ...tableOptions,
+        head: [['Dosi Totali per Pasto (media)', 'Quantità']],
+        body: perMealTotalsBody,
+        startY: yPos,
+        margin: { left: 14, right: 14 }
+      });
+
+      yPos = doc.autoTable.previous.finalY + 10; // Spazio prima della tabella successiva
+
+      // Tabella per il fabbisogno totale
+      doc.autoTable({
+        ...tableOptions,
+        head: [['Fabbisogno Totale Latte in Polvere', 'Quantità']],
+        body: [['Da oggi in poi', `${totalKgWeaningFromToday.toFixed(2)} kg`]],
+        startY: yPos,
+        margin: { left: 14, right: 14 }
+      });
+
+      yPos = doc.autoTable.previous.finalY;
 
 
       const headers = [
-        ["Matricola", "Data di Nascita", "Tipo Latte", "Da -> A", "Dose Totale Giornaliera", "Dose Acqua Giornaliera", "Dose Polvere Giornaliera", "Dose per Pasto", "Dose Acqua per Pasto", "Dose Polvere per Pasto", "Giorni allo Svezzamento"]
+        [
+          { content: 'Matricola', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
+          { content: 'Data di Nascita', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
+          { content: 'Tipo Latte', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
+          { content: 'Periodo Svezzamento', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } },
+          { content: 'Pasti/G', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } }, // Nuova colonna
+          { content: 'Dosi Totali Giornaliere', colSpan: 3, styles: { halign: 'center' } },
+          { content: 'Dosi per Pasto', colSpan: 3, styles: { halign: 'center' } },
+          { content: 'Giorni allo Svezzamento', rowSpan: 2, styles: { valign: 'middle', halign: 'center' } }
+        ],
+        [
+          'Latte (L)', 'Acqua (L)', 'Polvere (kg)',
+          'Latte (L)', 'Acqua (L)', 'Polvere (kg)'
+        ]
       ];
       const body = vitelliDisplayedData.map(calf => [ // Use vitelliDisplayedData here
         calf.matricola,
         calf.data_nascita,
         calf.milk_type === 'cow_milk' ? 'Vacca' : 'Polvere', // Display milk type in table
         calf.calculated_details.dates_range_text || '',
-        calf.calculated_details.latte_giornaliero.toFixed(2) + " L",
-        calf.calculated_details.acqua_giornaliera.toFixed(2) + " L",
-        calf.calculated_details.polvere_giornaliera.toFixed(2) + " kg",
-        calf.calculated_details.latte_per_pasto.toFixed(2) + " L",
-        calf.calculated_details.acqua_per_pasto.toFixed(2) + " L",
-        calf.calculated_details.polvere_per_pasto.toFixed(2) + " kg",
+        calf.calculated_details.pasti, // Aggiunto il numero di pasti
+        calf.calculated_details.latte_giornaliero.toFixed(2),
+        calf.calculated_details.acqua_giornaliera.toFixed(2),
+        calf.calculated_details.polvere_giornaliera.toFixed(2),
+        calf.calculated_details.latte_per_pasto.toFixed(2),
+        calf.calculated_details.acqua_per_pasto.toFixed(2),
+        calf.calculated_details.polvere_per_pasto.toFixed(2),
         calf.calculated_details.giorni_mancanti_text || ''
       ]);
 
       doc.autoTable({
-        startY: yPos + 10, // Adjusted startY
+        startY: yPos + 10,
         head: headers,
         body: body,
         theme: 'grid',
@@ -1721,17 +1796,18 @@ const App = () => {
         bodyStyles: bodyStyle,
         styles: { fontSize: 7, cellPadding: 1.5 }, // Reduced font size and padding
         columnStyles: {
-          0: { cellWidth: 25 }, // Matricola
-          1: { cellWidth: 25 }, // Data di Nascita
-          2: { cellWidth: 20 }, // Tipo Latte
-          3: { cellWidth: 35 }, // Da -> A
-          4: { cellWidth: 25 }, // Dose Totale Giornaliera
-          5: { cellWidth: 25 }, // Dose Acqua Giornaliera
-          6: { cellWidth: 25 }, // Dose Polvere Giornaliera
-          7: { cellWidth: 25 }, // Dose per Pasto
-          8: { cellWidth: 25 }, // Dose Acqua per Pasto
-          9: { cellWidth: 25 }, // Dose Polvere per Pasto
-          10: { cellWidth: 25 }, // Giorni allo Svezzamento
+          0: { cellWidth: 22 },  // Matricola
+          1: { cellWidth: 22 },  // Data di Nascita
+          2: { cellWidth: 15 },  // Tipo Latte
+          3: { cellWidth: 30 },  // Periodo Svezzamento
+          4: { cellWidth: 15 },  // Pasti/G (Nuova)
+          5: { cellWidth: 20 },  // Latte (L) Giorn.
+          6: { cellWidth: 20 },  // Acqua (L) Giorn.
+          7: { cellWidth: 20 },  // Polvere (kg) Giorn.
+          8: { cellWidth: 20 },  // Latte (L) Pasto
+          9: { cellWidth: 20 },  // Acqua (L) Pasto
+          10: { cellWidth: 20 }, // Polvere (kg) Pasto
+          11: { cellWidth: 25 }, // Giorni allo Svezzamento
         },
       });
 
@@ -2927,6 +3003,40 @@ const App = () => {
     saveCalfData(sortedRawCalves); // Save the sorted raw data, which will trigger the calculation useEffect
   };
 
+  // Hook per chiudere il menu a tendina quando si clicca all'esterno
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target)) {
+        setShowSortMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [sortMenuRef]);
+
+  // Sort by matricola (toggles direction)
+  const sortByMatricola = () => {
+    const sortedRawCalves = [...vitelliRawData].sort((a, b) => {
+      const matricolaA = a.matricola || '';
+      const matricolaB = b.matricola || '';
+
+      const comparison = matricolaA.localeCompare(matricolaB, undefined, { numeric: true, sensitivity: 'base' });
+
+      return matricolaSortDirection === 'ascending' ? comparison : comparison * -1;
+    });
+
+    // Toggle direction for the next click
+    setMatricolaSortDirection(
+      matricolaSortDirection === 'ascending' ? 'descending' : 'ascending'
+    );
+
+    // Save the sorted raw data, which will trigger the calculation useEffect
+    saveCalfData(sortedRawCalves);
+  };
+
+
   // Handle saving global settings from modal
   const handleSaveGlobalSettings = (newLatteSettimanaleConfig) => {
     const updatedConfig = { ...config, latte_settimanale: newLatteSettimanaleConfig };
@@ -3096,27 +3206,46 @@ const App = () => {
       ),
       React.createElement(
         "div",
-        { className: "flex flex-wrap items-center justify-between gap-3 mb-6 p-4 bg-gray-600 rounded-md shadow-sm" }, // Changed to justify-between
+        { className: "flex flex-wrap items-center justify-between gap-3 mb-6 p-4 bg-gray-600 rounded-md shadow-sm" }, // Modificato per allineare gli elementi ai lati
         React.createElement(
           "div",
-          { className: "flex items-center gap-3" }, // Group for sorting buttons
+          { className: "relative inline-block text-left", ref: sortMenuRef },
           React.createElement(
-            "button",
-            {
-              onClick: () => sortByDate(true),
-              className: "flex items-center px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition duration-200 shadow-md", // Set default dark theme colors
-            },
-            React.createElement(SortAscIcon, { size: 20, className: "mr-2" }),
-            " Ordina per Data Crescente"
+            "div",
+            null,
+            React.createElement(
+              "button",
+              {
+                type: "button",
+                onClick: () => setShowSortMenu(prev => !prev),
+                className: "inline-flex justify-center w-full rounded-md border border-gray-500 shadow-sm px-4 py-2 bg-gray-600 text-sm font-medium text-gray-200 hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-700 focus:ring-indigo-500",
+                id: "options-menu-button", "aria-expanded": "true", "aria-haspopup": "true"
+              },
+              "Ordina per...",
+              React.createElement("svg", { className: "-mr-1 ml-2 h-5 w-5", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 20 20", fill: "currentColor", "aria-hidden": "true" },
+                React.createElement("path", { fillRule: "evenodd", d: "M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z", clipRule: "evenodd" })
+              )
+            )
           ),
-          React.createElement(
-            "button",
-            {
-              onClick: () => sortByDate(false),
-              className: "flex items-center px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition duration-200 shadow-md", // Set default dark theme colors
-            },
-            React.createElement(SortDescIcon, { size: 20, className: "mr-2" }),
-            " Ordina per Data Decrescente"
+          showSortMenu && React.createElement(
+            "div",
+            { className: "origin-top-left absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-20", role: "menu", "aria-orientation": "vertical", "aria-labelledby": "options-menu-button" },
+            React.createElement(
+              "div",
+              { className: "py-1", role: "none" },
+              React.createElement("button", { onClick: () => { sortByDate(true); setShowSortMenu(false); }, className: "w-full text-left flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-600", role: "menuitem" },
+                React.createElement(SortAscIcon, { size: 16, className: "mr-3" }),
+                "Data Crescente"
+              ),
+              React.createElement("button", { onClick: () => { sortByDate(false); setShowSortMenu(false); }, className: "w-full text-left flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-600", role: "menuitem" },
+                React.createElement(SortDescIcon, { size: 16, className: "mr-3" }),
+                "Data Decrescente"
+              ),
+              React.createElement("button", { onClick: () => { sortByMatricola(); setShowSortMenu(false); }, className: "w-full text-left flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-600", role: "menuitem" },
+                matricolaSortDirection === 'ascending' ? React.createElement(SortAscIcon, { size: 16, className: "mr-3" }) : React.createElement(SortDescIcon, { size: 16, className: "mr-3" }),
+                "Matricola"
+              )
+            )
           )
         ),
         React.createElement(
@@ -3248,28 +3377,28 @@ const App = () => {
           "div",
           { className: "flex-1 p-5 border border-gray-600 rounded-lg shadow-md bg-gray-700" }, // Set default dark theme colors
           React.createElement("h3", { className: "text-lg font-bold text-blue-300 mb-2 text-center" }, "Dose Totale Giornaliera"), // Set default dark theme colors
-            React.createElement(
-              "div",
-              { className: "whitespace-pre-wrap text-center font-medium text-blue-400" }, // Set default dark theme colors
-              "Latte in polvere (ricostituito): ", totals.lattePolvere.toFixed(2), " L", React.createElement("br", null),
-              "Acqua: ", totals.acqua.toFixed(2), " L", React.createElement("br", null),
-              "Latte in Polvere: ", totals.polvere.toFixed(2), " kg",
-              totals.hasCowMilk && React.createElement(React.Fragment, null, React.createElement("hr", { className: "my-2 border-gray-600" }), "Latte di vacca: ", totals.latteVacca.toFixed(2), " L")
-            )
+          React.createElement(
+            "div",
+            { className: "text-center font-medium text-blue-400 space-y-1" }, // Rimosso whitespace-pre-wrap, aggiunto space-y
+            React.createElement("p", null, `Latte in polvere (ricostituito): ${totals.lattePolvere.toFixed(2)} L`),
+            React.createElement("p", null, `Acqua: ${totals.acqua.toFixed(2)} L`),
+            React.createElement("p", null, `Latte in Polvere: ${totals.polvere.toFixed(2)} kg`),
+            totals.hasCowMilk && React.createElement(React.Fragment, null, React.createElement("hr", { className: "my-2 border-gray-600" }), React.createElement("p", null, `Latte di vacca: ${totals.latteVacca.toFixed(2)} L`))
+          )
         ),
         React.createElement(
           "div",
           { className: "flex-1 p-5 border border-gray-600 rounded-lg shadow-md bg-gray-700" }, // Set default dark theme colors
           React.createElement("h3", { className: "text-lg font-bold text-blue-300 mb-2 text-center" }, "Dose Totale per Pasto"), // Set default dark theme colors
-            React.createElement(
-              "div",
-              { className: "whitespace-pre-wrap text-center font-medium text-blue-400" }, // Set default dark theme colors
-              "Latte in polvere (ricostituito): ", totals.lattePolverePasto.toFixed(2), " L", React.createElement("br", null),
-              "Acqua: ", totals.acquaPasto.toFixed(2), " L", React.createElement("br", null),
-              "Latte in Polvere: ", totals.polverePastoTotal.toFixed(2), " kg", React.createElement("br", null),
-              "(per pasto in media)",
-              totals.hasCowMilk && React.createElement(React.Fragment, null, React.createElement("hr", { className: "my-2 border-gray-600" }), "Latte di vacca: ", totals.latteVaccaPasto.toFixed(2), " L (per pasto)")
-            )
+          React.createElement(
+            "div",
+            { className: "text-center font-medium text-blue-400 space-y-1" }, // Rimosso whitespace-pre-wrap, aggiunto space-y
+            React.createElement("p", null, `Latte in polvere (ricostituito): ${totals.lattePolverePasto.toFixed(2)} L`),
+            React.createElement("p", null, `Acqua: ${totals.acquaPasto.toFixed(2)} L`),
+            React.createElement("p", null, `Latte in Polvere: ${totals.polverePastoTotal.toFixed(2)} kg`),
+            React.createElement("p", { className: "text-xs italic text-gray-400" }, "(per pasto in media)"),
+            totals.hasCowMilk && React.createElement(React.Fragment, null, React.createElement("hr", { className: "my-2 border-gray-600" }), React.createElement("p", null, `Latte di vacca: ${totals.latteVaccaPasto.toFixed(2)} L (per pasto)`))
+          )
         ),
         React.createElement(
           "div",
@@ -3277,10 +3406,8 @@ const App = () => {
           React.createElement("h3", { className: "text-lg font-bold text-green-300 mb-2 text-center" }, "Requisito Totale Latte in Polvere per Svezzamento"), // Set default dark theme colors
           React.createElement(
             "p",
-            { className: "text-center font-medium text-green-400" }, // Set default dark theme colors
-            "Totale kg Latte in Polvere necessaria da oggi: ",
-            totalKgWeaningFromToday.toFixed(2),
-            " kg"
+            { className: "text-center font-medium text-green-400" },
+            `Totale kg Latte in Polvere necessaria da oggi: ${totalKgWeaningFromToday.toFixed(2)} kg`
           )
         )
       ),
