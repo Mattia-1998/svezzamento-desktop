@@ -1,5 +1,8 @@
 // Questo è il file del processo principale di Electron (es. main.js)
 // Controlla il ciclo di vita dell'applicazione e la creazione delle finestre.
+try {
+    require('electron-reloader')(module);
+} catch (_) {}
 
 const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron'); // Aggiunto dialog per la selezione file
 const path = require('path');

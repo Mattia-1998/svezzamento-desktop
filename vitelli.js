@@ -512,11 +512,11 @@ const CalfDetailModal = ({ show, onClose, calfData, globalConfig, exportToPdf, e
               React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Data Fine"),
               React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Dose Latte/G (L)"),
               React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Acqua / G."),
-              React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Polvere di latte / G."),
+              React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte in Polvere / G."),
               React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte / pasto"),
               React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Acqua / pasto"),
-              React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Polvere di latte / Pasto"),
-              React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Pasti/G"),
+              React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte in Polvere / Pasto"),
+              React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Pasti"),
               React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Concentrazione (%)")
             )
           ),
@@ -726,10 +726,10 @@ const GlobalSettingsModal = ({ show, onClose, config, onSaveSettings }) => {
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Concentrazione (%)"),
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte Giornaliero"),
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Acqua al Giorno"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Polvere di latte / Giorno"),
+            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte in Polvere / Giorno"),
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte per pasto"),
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Acqua per Pasto"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Polvere di latte / Pasto")
+            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte in Polvere / Pasto")
           )
         ),
         React.createElement(
@@ -1076,10 +1076,10 @@ const CalfSpecificSettingsModal = ({ show, onClose, calfData, globalConfig, onSa
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Concentrazione (%)"),
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte Giornaliero"),
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Acqua al Giorno"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Polvere di latte / Giorno"),
+            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte in Polvere / Giorno"),
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte per pasto"),
             React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Acqua per Pasto"),
-            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Polvere di latte / Pasto")
+            React.createElement("th", { className: "py-2 px-3 text-center border-b" }, "Latte in Polvere / Pasto")
           )
         ),
         React.createElement(
@@ -1319,6 +1319,174 @@ const ImportExportModal = ({ show, onClose, onRefreshData }) => { // Added onRef
   );
 };
 
+// Componente per la finestra di opzioni di esportazione settimanale
+const WeeklyScheduleOptionsModal = ({ show, onClose, onGenerate }) => {
+  const [option, setOption] = React.useState('7days');
+  const [numDays, setNumDays] = React.useState(7);
+  const [startDate, setStartDate] = React.useState('');
+  const [endDate, setEndDate] = React.useState('');
+
+  const handleGenerate = () => {
+    if (option === 'xdays') {
+      const parsedDays = parseInt(numDays, 10);
+      if (isNaN(parsedDays) || parsedDays <= 0) {
+        const errorModal = document.createElement('div');
+        errorModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
+        errorModal.innerHTML = `
+          <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
+            <h3 class="text-lg font-semibold mb-4 text-red-400">Input non valido</h3>
+            <p class="mb-6">Inserisci un numero di giorni valido e maggiore di zero.</p>
+            <div class="flex justify-end">
+              <button id="closeErrorModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(errorModal);
+        document.getElementById('closeErrorModal').onclick = () => document.body.removeChild(errorModal);
+        return;
+      }
+    }
+    if (option === 'daterange') {
+      const startYYYYMMDD = parseDateToYYYYMMDD(startDate);
+      const endYYYYMMDD = parseDateToYYYYMMDD(endDate);
+      if (!startYYYYMMDD || !endYYYYMMDD) {
+        const errorModal = document.createElement('div');
+        errorModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
+        errorModal.innerHTML = `
+          <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
+            <h3 class="text-lg font-semibold mb-4 text-red-400">Date non valide</h3>
+            <p class="mb-6">Inserisci date valide nel formato gg/mm/aaaa.</p>
+            <div class="flex justify-end">
+              <button id="closeErrorModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(errorModal);
+        document.getElementById('closeErrorModal').onclick = () => document.body.removeChild(errorModal);
+        return;
+      }
+      const startDt = new Date(startYYYYMMDD);
+      const endDt = new Date(endYYYYMMDD);
+      if (startDt > endDt) {
+        const errorModal = document.createElement('div');
+        errorModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
+        errorModal.innerHTML = `
+          <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
+            <h3 class="text-lg font-semibold mb-4 text-red-400">Intervallo non valido</h3>
+            <p class="mb-6">La data di inizio non può essere successiva alla data di fine.</p>
+            <div class="flex justify-end">
+              <button id="closeErrorModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(errorModal);
+        document.getElementById('closeErrorModal').onclick = () => document.body.removeChild(errorModal);
+        return;
+      }
+    }
+
+    onGenerate({ option, numDays, startDate, endDate });
+    onClose();
+  };
+
+  const radioBaseClasses = "form-radio h-5 w-5 text-blue-500 bg-gray-600 border-gray-500 focus:ring-blue-500";
+  const labelBaseClasses = "ml-2 text-gray-200";
+  const inputBaseClasses = "ml-4 p-2 border border-gray-700 rounded-md bg-gray-500 text-gray-100 disabled:bg-gray-600 disabled:cursor-not-allowed";
+
+  return React.createElement(
+    Modal,
+    { show: show, onClose: onClose, title: "Opzioni Esportazione Programma Settimanale", maxWidthClass: 'max-w-lg' },
+    React.createElement(
+      "div",
+      { className: "flex flex-col space-y-6 text-gray-100 p-4" },
+      React.createElement(
+        "div",
+        { className: "flex items-center" },
+        React.createElement("input", { type: "radio", id: "7days", name: "exportOption", value: "7days", checked: option === '7days', onChange: (e) => setOption(e.target.value), className: radioBaseClasses }),
+        React.createElement("label", { htmlFor: "7days", className: labelBaseClasses }, "Salva i prossimi 7 giorni")
+      ),
+      React.createElement(
+        "div",
+        { className: "flex items-center" },
+        React.createElement("input", { type: "radio", id: "xdays", name: "exportOption", value: "xdays", checked: option === 'xdays', onChange: (e) => setOption(e.target.value), className: radioBaseClasses }),
+        React.createElement("label", { htmlFor: "xdays", className: labelBaseClasses }, "Salva i prossimi"),
+        React.createElement("input", { type: "number", value: numDays, onChange: (e) => setNumDays(e.target.value), disabled: option !== 'xdays', className: `${inputBaseClasses} w-24 text-center` }),
+        React.createElement("span", { className: "ml-2" }, "giorni")
+      ),
+      React.createElement(
+        "div",
+        { className: "flex flex-col space-y-2" },
+        React.createElement("div", { className: "flex items-center" },
+          React.createElement("input", { type: "radio", id: "daterange", name: "exportOption", value: "daterange", checked: option === 'daterange', onChange: (e) => setOption(e.target.value), className: radioBaseClasses }),
+          React.createElement("label", { htmlFor: "daterange", className: labelBaseClasses }, "Salva da/a:")
+        ),
+        React.createElement("div", { className: "flex items-center pl-7 space-x-2" },
+          React.createElement("label", { htmlFor: "startDate" }, "Da:"),
+          React.createElement("input", {
+            type: "date",
+            id: "startDate",
+            value: parseDateToYYYYMMDD(startDate) || '',
+            onChange: (e) => {
+              if (e.target.value) {
+                const [y, m, d] = e.target.value.split('-');
+                setStartDate(`${d}/${m}/${y}`);
+              } else {
+                setStartDate('');
+              }
+            },
+            disabled: option !== 'daterange',
+            className: `${inputBaseClasses} w-40`
+          }),
+          React.createElement("label", { htmlFor: "endDate" }, "A:"),
+          React.createElement("input", { type: "date", id: "endDate", value: parseDateToYYYYMMDD(endDate) || '', onChange: (e) => {
+              if (e.target.value) {
+                const [y, m, d] = e.target.value.split('-');
+                setEndDate(`${d}/${m}/${y}`);
+              } else {
+                setEndDate('');
+              }
+            }, disabled: option !== 'daterange', className: `${inputBaseClasses} w-40` })
+        )
+      ),
+      React.createElement("div", { className: "flex justify-end pt-4" },
+        React.createElement("button", { onClick: handleGenerate, className: "px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200 shadow-md" }, "Genera PDF")
+      )
+    )
+  );
+};
+
+// Componente per la finestra di opzioni di esportazione e stampa
+const ExportOptionsModal = ({ show, onClose, onExportPdf, onExportXlsx, onPrintWeekly }) => {
+  const buttonBaseClasses = "flex items-center justify-center w-full px-4 py-3 text-white rounded-md transition duration-200 shadow-md text-base";
+
+  return React.createElement(
+    Modal,
+    { show: show, onClose: onClose, title: "Opzioni di Esportazione e Stampa", maxWidthClass: 'max-w-md' },
+    React.createElement(
+      "div",
+      { className: "flex flex-col space-y-4 p-4" },
+      React.createElement(
+        "button",
+        {
+          onClick: () => { onExportPdf(); onClose(); },
+          className: `${buttonBaseClasses} bg-purple-500 hover:bg-purple-600`,
+        },
+        React.createElement(FileTextIcon, { size: 20, className: "mr-2" }),
+        "Salva PDF (Tutti i Vitelli)"
+      ),
+      React.createElement(
+        "button",
+        {
+          onClick: () => { onExportXlsx(); onClose(); },
+          className: `${buttonBaseClasses} bg-teal-500 hover:bg-teal-600`,
+        },
+        React.createElement(FileSpreadsheetIcon, { size: 20, className: "mr-2" }),
+        "Esporta in Excel (Tutti i Vitelli)"
+      ),
+      React.createElement("button", { onClick: onPrintWeekly, className: `${buttonBaseClasses} bg-cyan-500 hover:bg-cyan-600` }, React.createElement(PrinterIcon, { size: 20, className: "mr-2" }), "Stampa Programma Settimanale")
+    )
+  );
+};
 
 // Main App Component
 const App = () => {
@@ -1336,6 +1504,8 @@ const App = () => {
   const [selectedCalf, setSelectedCalf] = React.useState(null);
   const [appInfo, setAppInfo] = React.useState({ name: '', version: '' });
   const [showImportExportModal, setShowImportExportModal] = React.useState(false);
+  const [showWeeklyScheduleOptionsModal, setShowWeeklyScheduleOptionsModal] = React.useState(false);
+  const [showExportOptionsModal, setShowExportOptionsModal] = React.useState(false);
   // Rimosso lo stato `currentClock` da qui, poiché l'orologio è ora gestito direttamente nel DOM da index.html
   // e `useEffect` aggiorna direttamente l'elemento DOM.
 
@@ -1410,7 +1580,7 @@ const App = () => {
       doc.text("Programma Svezzamento Settimanale:", 20, 80); // Adjusted X, Y position
 
       const scheduleHeaders = [
-        ["Settimana", "Data Inizio", "Data Fine", "Dose Latte/G (L)", "Acqua / G.", "Polvere di latte / G.", "Latte / pasto", "Acqua / pasto", "Polvere / Pasto", "Pasti/G", "Concentrazione (%)"]
+        ["Settimana", "Data Inizio", "Data Fine", "Dose Latte/G (L)", "Acqua / G.", "Latte in Polvere / G.", "Latte / pasto", "Acqua / pasto", "Polvere / Pasto", "Pasti/G", "Concentrazione (%)"]
       ];
       const scheduleBody = schedule.map(row => [
         row.settimana,
@@ -1440,7 +1610,7 @@ const App = () => {
           2: { cellWidth: 25 }, // Data Fine
           3: { cellWidth: 25 }, // Dose Latte/G (L)
           4: { cellWidth: 25 }, // Acqua / G.
-          5: { cellWidth: 25 }, // Polvere di latte / G.
+          5: { cellWidth: 25 }, // Latte in Polvere / G.
           6: { cellWidth: 25 }, // Latte / pasto
           7: { cellWidth: 25 }, // Acqua / pasto
           8: { cellWidth: 25 }, // Polvere / Pasto
@@ -1477,7 +1647,7 @@ const App = () => {
       doc.text(`Dosi Totali Giornaliere:`, 20, yPos); yPos += 10;
       doc.text(`Latte in polvere (ricostituito): ${totals.lattePolvere.toFixed(2)} L`, 30, yPos); yPos += 10;
       doc.text(`Acqua: ${totals.acqua.toFixed(2)} L`, 30, yPos); yPos += 10;
-      doc.text(`Polvere di latte: ${totals.polvere.toFixed(2)} kg`, 30, yPos); yPos += 10;
+      doc.text(`Latte in Polvere: ${totals.polvere.toFixed(2)} kg`, 30, yPos); yPos += 10;
       if (totals.hasCowMilk) {
         yPos += 2; // Aggiunge un piccolo spazio
         doc.setDrawColor(150, 150, 150); // Colore grigio per la linea
@@ -1490,7 +1660,7 @@ const App = () => {
       doc.text(`Dosi Totali per Pasto:`, 20, yPos); yPos += 10;
       doc.text(`Latte in polvere (ricostituito): ${totals.lattePolverePasto.toFixed(2)} L`, 30, yPos); yPos += 10;
       doc.text(`Acqua: ${totals.acquaPasto.toFixed(2)} L`, 30, yPos); yPos += 10;
-      doc.text(`Polvere di latte: ${totals.polverePastoTotal.toFixed(2)} kg (per pasto in media)`, 30, yPos); yPos += 10;
+      doc.text(`Latte in Polvere: ${totals.polverePastoTotal.toFixed(2)} kg (per pasto in media)`, 30, yPos); yPos += 10;
       if (totals.hasCowMilk) {
         yPos += 2; // Aggiunge un piccolo spazio
         doc.setDrawColor(150, 150, 150); // Colore grigio per la linea
@@ -1500,7 +1670,7 @@ const App = () => {
       }
 
       yPos += 5;
-      doc.text(`Totale kg polvere di latte necessaria da oggi: ${totalKgWeaningFromToday.toFixed(2)} kg`, 20, yPos);
+      doc.text(`Totale kg Latte in Polvere necessaria da oggi: ${totalKgWeaningFromToday.toFixed(2)} kg`, 20, yPos);
 
 
       const headers = [
@@ -1599,7 +1769,7 @@ const App = () => {
         [],
         ["Programma Svezzamento Settimanale:"],
         [],
-        ["Settimana", "Data Inizio", "Data Fine", "Dose Latte/G (L)", "Acqua / G.", "Polvere di latte / G.", "Latte / pasto", "Acqua / pasto", "Polvere / Pasto", "Pasti/G", "Concentrazione (%)"],
+        ["Settimana", "Data Inizio", "Data Fine", "Dose Latte/G (L)", "Acqua / G.", "Latte in Polvere / G.", "Latte / pasto", "Acqua / pasto", "Polvere / Pasto", "Pasti/G", "Concentrazione (%)"],
       ];
 
       schedule.forEach(row => {
@@ -1712,6 +1882,205 @@ const App = () => {
       };
     }
   };
+
+  // PDF Export Function for Weekly Schedule
+  const exportWeeklyScheduleToPdf = React.useCallback((calvesToExport, options) => {
+    if (!calvesToExport || calvesToExport.length === 0) {
+      const infoModal = document.createElement('div');
+      infoModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
+      infoModal.innerHTML = `
+        <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
+          <h3 class="text-lg font-semibold mb-4">Informazione</h3>
+          <p class="mb-6">Nessun vitello da esportare.</p>
+          <div class="flex justify-end">
+            <button id="closeInfoModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(infoModal);
+      document.getElementById('closeInfoModal').onclick = () => {
+        document.body.removeChild(infoModal);
+      };
+      return;
+    }
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      const errorModal = document.createElement('div');
+      errorModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
+      errorModal.innerHTML = `
+        <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
+          <h3 class="text-lg font-semibold mb-4 text-red-400">Errore Libreria</h3>
+          <p class="mb-6">La libreria jsPDF non è caricata. Impossibile esportare in PDF.</p>
+          <div class="flex justify-end">
+            <button id="closeErrorModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(errorModal);
+      document.getElementById('closeErrorModal').onclick = () => {
+        document.body.removeChild(errorModal);
+      };
+      return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+    doc.setFont("helvetica");
+
+    let yPos = 15;
+    doc.setFontSize(18);
+    doc.text(`Programma di Svezzamento Settimanale`, doc.internal.pageSize.width / 2, yPos, { align: 'center' });
+    yPos += 15;
+
+    let loopStartDate;
+    let daysToExport;
+
+    if (options.option === '7days') {
+        loopStartDate = new Date();
+        daysToExport = 7;
+    } else if (options.option === 'xdays') {
+        loopStartDate = new Date();
+        daysToExport = parseInt(options.numDays, 10);
+    } else { // 'daterange'
+        const start = new Date(parseDateToYYYYMMDD(options.startDate));
+        const end = new Date(parseDateToYYYYMMDD(options.endDate));
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        loopStartDate = start;
+        const diffTime = Math.abs(end - start);
+        daysToExport = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    }
+    loopStartDate.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < daysToExport; i++) {
+      const currentDate = new Date(loopStartDate);
+      currentDate.setDate(loopStartDate.getDate() + i);
+      const currentDateString = formatDate(currentDate);
+
+      if (i > 0) { // Add a gap between tables
+        yPos += 10;
+      }
+
+      // Check if there's enough space for the next table header, if not, add a page
+      if (yPos > doc.internal.pageSize.height - 40) {
+        doc.addPage();
+        yPos = 15;
+      }
+
+      doc.setFontSize(14);
+      doc.text(`Giorno: ${currentDateString}`, 14, yPos);
+      yPos += 8;
+
+      const tableData = calvesToExport.map(calf => {
+        const calfConfig = (calf.individual_config && calf.individual_config.length > 0)
+                           ? calf.individual_config
+                           : config.latte_settimanale;
+        
+        const durataSvezzamentoGiorni = (calfConfig?.length || 0) * 7;
+        
+        const dNascitaStr = calf.data_nascita;
+        if (!dNascitaStr) return null;
+
+        try {
+          const dataNascitaYYYYMMDD = parseDateToYYYYMMDD(dNascitaStr);
+          if (!dataNascitaYYYYMMDD) throw new Error("Invalid date format");
+          const dataNascitaDt = new Date(dataNascitaYYYYMMDD);
+          if (isNaN(dataNascitaDt.getTime())) throw new Error("Invalid date object");
+          dataNascitaDt.setHours(0, 0, 0, 0);
+
+          const diffTime = Math.abs(currentDate - dataNascitaDt);
+          const giorniPassati = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+          if (giorniPassati >= durataSvezzamentoGiorni) return null;
+
+          const settimanaIdx = Math.floor(giorniPassati / 7);
+          if (settimanaIdx >= calfConfig.length) return null;
+          
+          const currentWeekConfig = calfConfig[settimanaIdx];
+          const isCowMilk = calf.milk_type === 'cow_milk';
+          const pasti = currentWeekConfig.pasti || 2;
+
+          let latteGiornaliero = 0, acquaGiornaliera = 0, polvereGiornaliera = 0;
+          let lattePerPasto = 0, acquaPerPasto = 0, polverePerPasto = 0;
+
+          if (isCowMilk) {
+              latteGiornaliero = (currentWeekConfig.dose_kg || 0) / 7;
+              lattePerPasto = pasti > 0 ? latteGiornaliero / pasti : 0;
+          } else {
+              const concentrazionePercentuale = currentWeekConfig.concentrazione_percentuale || 10.0;
+              polvereGiornaliera = (currentWeekConfig.dose_kg || 0) / 7;
+              latteGiornaliero = polvereGiornaliera * (100 / concentrazionePercentuale);
+              acquaGiornaliera = latteGiornaliero - polvereGiornaliera;
+              
+              lattePerPasto = pasti > 0 ? latteGiornaliero / pasti : 0;
+              acquaPerPasto = pasti > 0 ? acquaGiornaliera / pasti : 0;
+              polverePerPasto = pasti > 0 ? polvereGiornaliera / pasti : 0;
+          }
+
+          return [
+              calf.matricola,
+              isCowMilk ? 'Vacca' : 'Polvere',
+              pasti,
+              lattePerPasto.toFixed(2),
+              acquaPerPasto.toFixed(2),
+              polverePerPasto.toFixed(2),
+              latteGiornaliero.toFixed(2),
+              acquaGiornaliera.toFixed(2),
+              polvereGiornaliera.toFixed(2),
+              currentWeekConfig?.descrizione || ''
+          ];
+        } catch (e) {
+          console.error(`Errore calcolo per vitello ${calf.matricola} in data ${currentDateString}:`, e);
+          return [calf.matricola, 'Errore', '-', '-', '-', '-', '-', '-', '-', '-'];
+        }
+      }).filter(row => row !== null);
+
+      if (tableData.length > 0) {
+        doc.autoTable({
+            startY: yPos,
+            margin: { left: 14, right: 14 },
+            head: [["Matricola", "Tipo", "Pasti", "L/Pasto", "A/Pasto", "P/Pasto", "L/Giorno", "A/Giorno", "P/Giorno", "Descrizione"]],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold' },
+            styles: { fontSize: 7, cellPadding: 1.5, valign: 'middle' },
+            columnStyles: {
+                0: { cellWidth: 25 }, // Matricola
+                1: { cellWidth: 15 }, // Tipo
+                2: { cellWidth: 15 }, // Pasti
+                3: { cellWidth: 20 }, // L/Pasto
+                4: { cellWidth: 20 }, // A/Pasto
+                5: { cellWidth: 20 }, // P/Pasto
+                6: { cellWidth: 20 }, // L/Giorno
+                7: { cellWidth: 20 }, // A/Giorno
+                8: { cellWidth: 20 }, // P/Giorno
+                9: { cellWidth: 74 }  // Descrizione
+            }
+        });
+        yPos = doc.autoTable.previous.finalY;
+      } else {
+          doc.setFontSize(10);
+          doc.text("Nessun vitello in svezzamento per questo giorno.", 14, yPos);
+          yPos += 10;
+      }
+    }
+
+    doc.save(`Programma_Svezzamento_Settimanale.pdf`);
+    const successModal = document.createElement('div');
+    successModal.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]';
+    successModal.innerHTML = `
+      <div class="bg-gray-700 rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-100">
+        <h3 class="text-lg font-semibold mb-4">Esportazione PDF Completata</h3>
+        <p class="mb-6">Programma settimanale salvato con successo.</p>
+        <div class="flex justify-end">
+          <button id="closeSuccessModal" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Chiudi</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(successModal);
+    document.getElementById('closeSuccessModal').onclick = () => {
+      document.body.removeChild(successModal);
+    };
+  }, [config.latte_settimanale]);
 
   // Default configuration
   const getDefaultConfig = React.useCallback(() => [
@@ -2063,7 +2432,7 @@ const App = () => {
                   acquaPerPasto = acquaGiornaliera / pasti;
                 }
 
-                doseGiornalieraText = `Latte: ${latteGiornaliero.toFixed(2)} L\nAcqua: ${acquaGiornaliera.toFixed(2)} L\nPolvere di latte: ${polvereGiornaliera.toFixed(2)} kg`;
+                doseGiornalieraText = `Latte: ${latteGiornaliero.toFixed(2)} L\nAcqua: ${acquaGiornaliera.toFixed(2)} L\nLatte in Polvere: ${polvereGiornaliera.toFixed(2)} kg`;
                 dosePerPastoText = `Latte: ${lattePerPasto.toFixed(2)} L\nAcqua: ${acquaPerPasto.toFixed(2)} L\nPolvere: ${polverePerPastoValue.toFixed(2)} kg\n(${pasti} pasti)`;
 
                 // Calculate remaining powder only for powdered milk calves
@@ -2529,6 +2898,11 @@ const App = () => {
     };
   };
 
+  // Handle generating the weekly schedule PDF from the options modal
+  const handleGenerateWeeklySchedule = (options) => {
+    exportWeeklyScheduleToPdf(vitelliDisplayedData, options);
+  };
+
   // Update clock
   React.useEffect(() => {
     const timer = setInterval(() => {
@@ -2641,24 +3015,7 @@ const App = () => {
         React.createElement(
           "div",
           { className: "flex items-center gap-3" }, // Group for export/print buttons
-          React.createElement(
-            "button",
-            {
-              onClick: () => exportDataToPdf(null),
-              className: "flex items-center px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition duration-200 shadow-md",
-            },
-            React.createElement(FileTextIcon, { size: 20, className: "mr-2" }),
-            " Salva PDF (Tutti)"
-          ),
-          React.createElement(
-            "button",
-            {
-              onClick: () => exportToXlsx(null),
-              className: "flex items-center px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition duration-200 shadow-md",
-            },
-            React.createElement(FileSpreadsheetIcon, { size: 20, className: "mr-2" }),
-            " Esporta in Excel (Tutti)" // Changed text here
-          )
+          React.createElement("button", { onClick: () => setShowExportOptionsModal(true), className: "flex items-center px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition duration-200 shadow-md" }, React.createElement(PrinterIcon, { size: 20, className: "mr-2" }), " Esporta / Stampa")
         )
       ),
       React.createElement(
@@ -2789,7 +3146,7 @@ const App = () => {
               { className: "whitespace-pre-wrap text-center font-medium text-blue-400" }, // Set default dark theme colors
               "Latte in polvere (ricostituito): ", totals.lattePolvere.toFixed(2), " L", React.createElement("br", null),
               "Acqua: ", totals.acqua.toFixed(2), " L", React.createElement("br", null),
-              "Polvere di latte: ", totals.polvere.toFixed(2), " kg",
+              "Latte in Polvere: ", totals.polvere.toFixed(2), " kg",
               totals.hasCowMilk && React.createElement(React.Fragment, null, React.createElement("hr", { className: "my-2 border-gray-600" }), "Latte di vacca: ", totals.latteVacca.toFixed(2), " L")
             )
         ),
@@ -2802,7 +3159,7 @@ const App = () => {
               { className: "whitespace-pre-wrap text-center font-medium text-blue-400" }, // Set default dark theme colors
               "Latte in polvere (ricostituito): ", totals.lattePolverePasto.toFixed(2), " L", React.createElement("br", null),
               "Acqua: ", totals.acquaPasto.toFixed(2), " L", React.createElement("br", null),
-              "Polvere di latte: ", totals.polverePastoTotal.toFixed(2), " kg", React.createElement("br", null),
+              "Latte in Polvere: ", totals.polverePastoTotal.toFixed(2), " kg", React.createElement("br", null),
               "(per pasto in media)",
               totals.hasCowMilk && React.createElement(React.Fragment, null, React.createElement("hr", { className: "my-2 border-gray-600" }), "Latte di vacca: ", totals.latteVaccaPasto.toFixed(2), " L (per pasto)")
             )
@@ -2810,11 +3167,11 @@ const App = () => {
         React.createElement(
           "div",
           { className: "flex-1 p-5 border border-gray-600 rounded-lg shadow-md bg-gray-700" }, // Set default dark theme colors
-          React.createElement("h3", { className: "text-lg font-bold text-green-300 mb-2 text-center" }, "Requisito Totale Polvere di Latte per Svezzamento"), // Set default dark theme colors
+          React.createElement("h3", { className: "text-lg font-bold text-green-300 mb-2 text-center" }, "Requisito Totale Latte in Polvere per Svezzamento"), // Set default dark theme colors
           React.createElement(
             "p",
             { className: "text-center font-medium text-green-400" }, // Set default dark theme colors
-            "Totale kg polvere di latte necessaria da oggi: ",
+            "Totale kg Latte in Polvere necessaria da oggi: ",
             totalKgWeaningFromToday.toFixed(2),
             " kg"
           )
@@ -2914,6 +3271,21 @@ const App = () => {
       show: showImportExportModal,
       onClose: () => setShowImportExportModal(false),
       onRefreshData: loadAllData, // Pass the function to refresh all data after import
+    }),
+    React.createElement(ExportOptionsModal, {
+      show: showExportOptionsModal,
+      onClose: () => setShowExportOptionsModal(false),
+      onExportPdf: () => exportDataToPdf(null),
+      onExportXlsx: () => exportToXlsx(null),
+      onPrintWeekly: () => {
+        setShowExportOptionsModal(false);
+        setShowWeeklyScheduleOptionsModal(true);
+      },
+    }),
+    React.createElement(WeeklyScheduleOptionsModal, {
+      show: showWeeklyScheduleOptionsModal,
+      onClose: () => setShowWeeklyScheduleOptionsModal(false),
+      onGenerate: handleGenerateWeeklySchedule,
     })
   );
 };
