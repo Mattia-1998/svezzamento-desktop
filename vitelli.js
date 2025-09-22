@@ -1542,14 +1542,14 @@ const App = () => {
     lattePolvere: 0,
     acqua: 0,
     polvere: 0,
-    lattePolverePasto: 0,
-    acquaPasto: 0,
-    polverePastoTotal: 0,
     // Cow milk totals
     latteVacca: 0,
-    latteVaccaPasto: 0,
-    // Flag to check if any cow milk calf is present
-    hasCowMilk: false
+    hasCowMilk: false,
+    mealTotals: {
+      1: { lattePolvere: 0, acqua: 0, polvere: 0, latteVacca: 0 },
+      2: { lattePolvere: 0, acqua: 0, polvere: 0, latteVacca: 0 },
+      3: { lattePolvere: 0, acqua: 0, polvere: 0, latteVacca: 0 }
+    }
   });
   const [totalKgWeaningFromToday, setTotalKgWeaningFromToday] = React.useState(0);
 
@@ -1713,16 +1713,6 @@ const App = () => {
         dailyTotalsBody.push(['Latte di vacca', `${totals.latteVacca.toFixed(2)} L`]);
       }
 
-      const perMealTotalsBody = [];
-      if (totals.lattePolverePasto > 0 || !totals.hasCowMilk) {
-        perMealTotalsBody.push(['Latte in polvere (ricostituito)', `${totals.lattePolverePasto.toFixed(2)} L`]);
-        perMealTotalsBody.push(['Acqua', `${totals.acquaPasto.toFixed(2)} L`]);
-        perMealTotalsBody.push(['Latte in Polvere (media)', `${totals.polverePastoTotal.toFixed(2)} kg`]);
-      }
-      if (totals.hasCowMilk) {
-        perMealTotalsBody.push(['Latte di vacca', `${totals.latteVaccaPasto.toFixed(2)} L`]);
-      }
-
       // Disegna le tabelle una sotto l'altra per garantire la visibilità
       doc.autoTable({
         ...tableOptions,
@@ -1734,26 +1724,53 @@ const App = () => {
 
       yPos = doc.autoTable.previous.finalY + 5; // Aggiunge un piccolo spazio
 
-      doc.autoTable({
-        ...tableOptions,
-        head: [['Dosi Totali per Pasto (media)', 'Quantità']],
-        body: perMealTotalsBody,
-        startY: yPos,
-        margin: { left: 14, right: 14 }
-      });
+      if (totals.mealTotals) {
+        doc.setFontSize(12);
+        doc.text("Dosi Totali per Singolo Pasto", 14, yPos);
+        yPos += 7;
 
-      yPos = doc.autoTable.previous.finalY + 10; // Spazio prima della tabella successiva
+        Object.keys(totals.mealTotals).forEach(mealNumber => {
+            const meal = totals.mealTotals[mealNumber];
+            if (meal.lattePolvere > 0 || meal.latteVacca > 0) {
+                if (yPos > doc.internal.pageSize.height - 40) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                const mealBody = [];
+                if (meal.lattePolvere > 0) {
+                    mealBody.push(['Latte Polvere (ricost.)', `${meal.lattePolvere.toFixed(2)} L`]);
+                    mealBody.push(['Acqua', `${meal.acqua.toFixed(2)} L`]);
+                    mealBody.push(['Polvere', `${meal.polvere.toFixed(2)} kg`]);
+                }
+                if (meal.latteVacca > 0) {
+                    mealBody.push(['Latte Vacca', `${meal.latteVacca.toFixed(2)} L`]);
+                }
+
+                doc.autoTable({
+                    startY: yPos,
+                    head: [[`Totale Pasto ${mealNumber}`]],
+                    body: mealBody,
+                    theme: 'grid',
+                    headStyles: { fillColor: [96, 125, 139], fontSize: 9, fontStyle: 'bold' },
+                    bodyStyles: { fontSize: 9 },
+                    styles: { cellPadding: 2, valign: 'middle' },
+                    columnStyles: { 0: { fontStyle: 'bold' } },
+                    margin: { left: 14, right: 14 }
+                });
+                yPos = doc.autoTable.previous.finalY + 5;
+            }
+        });
+      }
+      yPos = Math.max(yPos, doc.autoTable.previous.finalY); // Ensure space before next table
 
       // Tabella per il fabbisogno totale
       doc.autoTable({
         ...tableOptions,
         head: [['Fabbisogno Totale Latte in Polvere', 'Quantità']],
         body: [['Da oggi in poi', `${totalKgWeaningFromToday.toFixed(2)} kg`]],
-        startY: yPos,
+        startY: yPos + 5,
         margin: { left: 14, right: 14 }
       });
-
-      yPos = doc.autoTable.previous.finalY;
 
 
       const headers = [
@@ -2069,72 +2086,73 @@ const App = () => {
       yPos += 8;
 
       const tableData = calvesToExport.map(calf => {
-        const calfConfig = (calf.individual_config && calf.individual_config.length > 0)
-                           ? calf.individual_config
-                           : config.latte_settimanale;
+          const calfConfig = (calf.individual_config && calf.individual_config.length > 0)
+                             ? calf.individual_config
+                             : config.latte_settimanale;
         
-        const durataSvezzamentoGiorni = (calfConfig?.length || 0) * 7;
+          const durataSvezzamentoGiorni = (calfConfig?.length || 0) * 7;
         
-        const dNascitaStr = calf.data_nascita;
-        if (!dNascitaStr) return null;
+          const dNascitaStr = calf.data_nascita;
+          if (!dNascitaStr) return null;
 
-        try {
-          const dataNascitaYYYYMMDD = parseDateToYYYYMMDD(dNascitaStr);
-          if (!dataNascitaYYYYMMDD) throw new Error("Invalid date format");
-          const dataNascitaDt = new Date(dataNascitaYYYYMMDD);
-          if (isNaN(dataNascitaDt.getTime())) throw new Error("Invalid date object");
-          dataNascitaDt.setHours(0, 0, 0, 0);
+          try {
+              const dataNascitaYYYYMMDD = parseDateToYYYYMMDD(dNascitaStr);
+              if (!dataNascitaYYYYMMDD) throw new Error("Invalid date format");
+              const dataNascitaDt = new Date(dataNascitaYYYYMMDD);
+              if (isNaN(dataNascitaDt.getTime())) throw new Error("Invalid date object");
+              dataNascitaDt.setHours(0, 0, 0, 0);
 
-          const diffTime = Math.abs(currentDate - dataNascitaDt);
-          const giorniPassati = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+              const diffTime = Math.abs(currentDate - dataNascitaDt);
+              const giorniPassati = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-          if (giorniPassati >= durataSvezzamentoGiorni) return null;
+              if (giorniPassati >= durataSvezzamentoGiorni) return null;
 
-          const settimanaIdx = Math.floor(giorniPassati / 7);
-          if (settimanaIdx >= calfConfig.length) return null;
+              const settimanaIdx = Math.floor(giorniPassati / 7);
+              if (settimanaIdx >= calfConfig.length) return null;
           
-          const currentWeekConfig = calfConfig[settimanaIdx];
-          const isCowMilk = calf.milk_type === 'cow_milk';
-          const pasti = currentWeekConfig.pasti || 2;
+              const currentWeekConfig = calfConfig[settimanaIdx];
+              const isCowMilk = calf.milk_type === 'cow_milk';
+              const pasti = currentWeekConfig.pasti || 2;
 
-          let latteGiornaliero = 0, acquaGiornaliera = 0, polvereGiornaliera = 0;
-          let lattePerPasto = 0, acquaPerPasto = 0, polverePerPasto = 0;
+              let latteGiornaliero = 0, acquaGiornaliera = 0, polvereGiornaliera = 0;
+              let lattePerPasto = 0, acquaPerPasto = 0, polverePerPasto = 0;
 
-          if (isCowMilk) {
-              latteGiornaliero = (currentWeekConfig.dose_kg || 0) / 7;
-              lattePerPasto = pasti > 0 ? latteGiornaliero / pasti : 0;
-          } else {
-              const concentrazionePercentuale = currentWeekConfig.concentrazione_percentuale || 10.0;
-              polvereGiornaliera = (currentWeekConfig.dose_kg || 0) / 7;
-              latteGiornaliero = polvereGiornaliera * (100 / concentrazionePercentuale);
-              acquaGiornaliera = latteGiornaliero - polvereGiornaliera;
+              if (isCowMilk) {
+                  latteGiornaliero = (currentWeekConfig.dose_kg || 0) / 7;
+                  lattePerPasto = pasti > 0 ? latteGiornaliero / pasti : 0;
+              } else {
+                  const concentrazionePercentuale = currentWeekConfig.concentrazione_percentuale || 10.0;
+                  polvereGiornaliera = (currentWeekConfig.dose_kg || 0) / 7;
+                  latteGiornaliero = polvereGiornaliera * (100 / concentrazionePercentuale);
+                  acquaGiornaliera = latteGiornaliero - polvereGiornaliera;
               
-              lattePerPasto = pasti > 0 ? latteGiornaliero / pasti : 0;
-              acquaPerPasto = pasti > 0 ? acquaGiornaliera / pasti : 0;
-              polverePerPasto = pasti > 0 ? polvereGiornaliera / pasti : 0;
-          }
+                  lattePerPasto = pasti > 0 ? latteGiornaliero / pasti : 0;
+                  acquaPerPasto = pasti > 0 ? acquaGiornaliera / pasti : 0;
+                  polverePerPasto = pasti > 0 ? polvereGiornaliera / pasti : 0;
+              }
 
-          return [
-              calf.matricola,
-              isCowMilk ? 'Vacca' : 'Polvere',
-              pasti,
-              lattePerPasto.toFixed(2),
-              acquaPerPasto.toFixed(2),
-              polverePerPasto.toFixed(2),
-              latteGiornaliero.toFixed(2),
-              acquaGiornaliera.toFixed(2),
-              polvereGiornaliera.toFixed(2),
-              currentWeekConfig?.descrizione || ''
-          ];
-        } catch (e) {
-          console.error(`Errore calcolo per vitello ${calf.matricola} in data ${currentDateString}:`, e);
-          return [calf.matricola, 'Errore', '-', '-', '-', '-', '-', '-', '-', '-'];
-        }
+              return [
+                  calf.matricola,
+                  isCowMilk ? 'Vacca' : 'Polvere',
+                  pasti,
+                  lattePerPasto.toFixed(2),
+                  acquaPerPasto.toFixed(2),
+                  polverePerPasto.toFixed(2),
+                  latteGiornaliero.toFixed(2),
+                  acquaGiornaliera.toFixed(2),
+                  polvereGiornaliera.toFixed(2),
+                  currentWeekConfig?.descrizione || ''
+              ];
+          } catch (e) {
+              console.error(`Errore calcolo per vitello ${calf.matricola} in data ${currentDateString}:`, e);
+              return [calf.matricola, 'Errore', '-', '-', '-', '-', '-', '-', '-', '-'];
+          }
       }).filter(row => row !== null);
 
       if (tableData.length > 0) {
         const totalsForDay = tableData.reduce((acc, row) => {
             const isCowMilk = row[1] === 'Vacca';
+            const pasti = parseInt(row[2]) || 0;
             const lattePasto = parseFloat(row[3]) || 0;
             const acquaPasto = parseFloat(row[4]) || 0;
             const polverePasto = parseFloat(row[5]) || 0;
@@ -2144,19 +2162,32 @@ const App = () => {
 
             if (isCowMilk) {
                 acc.cow.latteGiorno += latteGiorno;
-                acc.cow.lattePasto += lattePasto;
             } else {
                 acc.powder.latteGiorno += latteGiorno;
                 acc.powder.acquaGiorno += acquaGiorno;
                 acc.powder.polvereGiorno += polvereGiorno;
-                acc.powder.lattePasto += lattePasto;
-                acc.powder.acquaPasto += acquaPasto;
-                acc.powder.polverePasto += polverePasto;
+            }
+
+            for (let i = 1; i <= pasti; i++) {
+                if (acc.mealTotals[i]) {
+                    if (isCowMilk) {
+                        acc.mealTotals[i].latteVacca += lattePasto;
+                    } else {
+                        acc.mealTotals[i].lattePolvere += lattePasto;
+                        acc.mealTotals[i].acqua += acquaPasto;
+                        acc.mealTotals[i].polvere += polverePasto;
+                    }
+                }
             }
             return acc;
         }, {
-            powder: { latteGiorno: 0, acquaGiorno: 0, polvereGiorno: 0, lattePasto: 0, acquaPasto: 0, polverePasto: 0 },
-            cow: { latteGiorno: 0, lattePasto: 0 }
+            powder: { latteGiorno: 0, acquaGiorno: 0, polvereGiorno: 0 },
+            cow: { latteGiorno: 0 },
+            mealTotals: {
+                1: { lattePolvere: 0, acqua: 0, polvere: 0, latteVacca: 0 },
+                2: { lattePolvere: 0, acqua: 0, polvere: 0, latteVacca: 0 },
+                3: { lattePolvere: 0, acqua: 0, polvere: 0, latteVacca: 0 }
+            }
         });
 
         const hasPowder = totalsForDay.powder.latteGiorno > 0;
@@ -2200,42 +2231,64 @@ const App = () => {
                 doc.text("Riepilogo Totali del Giorno:", 14, yPos);
                 yPos += 2;
 
+                const dailyBody = [];
                 if (hasPowder) {
-                    doc.autoTable({
-                        startY: yPos,
-                        margin: { left: 14, right: 14 },
-                        head: [['Latte in Polvere', 'Latte Totale (L)', 'Acqua Totale (L)', 'Polvere Totale (kg)']],
-                        body: [
-                            ['Dose Giornaliera', totalsForDay.powder.latteGiorno.toFixed(2), totalsForDay.powder.acquaGiorno.toFixed(2), totalsForDay.powder.polvereGiorno.toFixed(2)],
-                            ['Dose per Pasto', totalsForDay.powder.lattePasto.toFixed(2), totalsForDay.powder.acquaPasto.toFixed(2), totalsForDay.powder.polverePasto.toFixed(2)]
-                        ],
-                        theme: 'grid',
-                        headStyles: { fillColor: [96, 125, 139], fontSize: 8, fontStyle: 'bold' },
-                        bodyStyles: { fontSize: 8 },
-                        styles: { cellPadding: 1.5, valign: 'middle' },
-                        didDrawPage: (data) => { yPos = data.cursor.y; }
-                    });
-                    yPos = doc.autoTable.previous.finalY;
+                    dailyBody.push(['Latte Polvere (ricost.)', `${totalsForDay.powder.latteGiorno.toFixed(2)} L`]);
+                    dailyBody.push(['Acqua', `${totalsForDay.powder.acquaGiorno.toFixed(2)} L`]);
+                    dailyBody.push(['Polvere', `${totalsForDay.powder.polvereGiorno.toFixed(2)} kg`]);
+                }
+                if (hasCow) {
+                    dailyBody.push(['Latte Vacca', `${totalsForDay.cow.latteGiorno.toFixed(2)} L`]);
                 }
 
-                if (hasCow) {
-                    if (hasPowder) yPos += 2;
-                    doc.autoTable({
-                        startY: yPos,
-                        margin: { left: 14, right: 14 },
-                        head: [['Latte di Vacca', 'Latte Totale (L)']],
-                        body: [
-                            ['Dose Giornaliera', totalsForDay.cow.latteGiorno.toFixed(2)],
-                            ['Dose per Pasto', totalsForDay.cow.lattePasto.toFixed(2)]
-                        ],
-                        theme: 'grid',
-                        headStyles: { fillColor: [96, 125, 139], fontSize: 8, fontStyle: 'bold' },
-                        bodyStyles: { fontSize: 8 },
-                        styles: { cellPadding: 1.5, valign: 'middle' },
-                        didDrawPage: (data) => { yPos = data.cursor.y; }
-                    });
-                    yPos = doc.autoTable.previous.finalY;
-                }
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['Dose Giornaliera Totale', 'Quantità']],
+                    body: dailyBody,
+                    theme: 'grid',
+                    headStyles: { fillColor: [96, 125, 139], fontSize: 8, fontStyle: 'bold' },
+                    bodyStyles: { fontSize: 8 },
+                    styles: { cellPadding: 1.5, valign: 'middle' },
+                    columnStyles: { 0: { fontStyle: 'bold' } },
+                    margin: { left: 14, right: 14 },
+                    didDrawPage: (data) => { yPos = data.cursor.y; }
+                });
+                yPos = doc.autoTable.previous.finalY + 5;
+
+                // Now the per-meal totals
+                Object.keys(totalsForDay.mealTotals).forEach(mealNumber => {
+                    const meal = totalsForDay.mealTotals[mealNumber];
+                    if (meal.lattePolvere > 0 || meal.latteVacca > 0) {
+                        if (yPos > doc.internal.pageSize.height - 30) {
+                            doc.addPage();
+                            yPos = 15;
+                        }
+                        
+                        const mealBody = [];
+                        if (meal.lattePolvere > 0) {
+                            mealBody.push(['Latte Polvere (ricost.)', `${meal.lattePolvere.toFixed(2)} L`]);
+                            mealBody.push(['Acqua', `${meal.acqua.toFixed(2)} L`]);
+                            mealBody.push(['Polvere', `${meal.polvere.toFixed(2)} kg`]);
+                        }
+                        if (meal.latteVacca > 0) {
+                            mealBody.push(['Latte Vacca', `${meal.latteVacca.toFixed(2)} L`]);
+                        }
+
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [[`Totale Pasto ${mealNumber}`]],
+                            body: mealBody,
+                            theme: 'grid',
+                            headStyles: { fillColor: [127, 140, 141], fontSize: 8, fontStyle: 'bold' },
+                            bodyStyles: { fontSize: 8 },
+                            styles: { cellPadding: 1.5, valign: 'middle' },
+                            columnStyles: { 0: { fontStyle: 'bold' } },
+                            margin: { left: 14, right: 14 },
+                            didDrawPage: (data) => { yPos = data.cursor.y; }
+                        });
+                        yPos = doc.autoTable.previous.finalY + 2;
+                    }
+                });
             }
         }
       } else {
@@ -2511,14 +2564,14 @@ const App = () => {
     let totLatteVaccaGiornaliero = 0.0;
     let totAcquaGiornaliera = 0.0;
     let totPolvereGiornaliera = 0.0;
-    let totLattePolverePerPasto = 0.0;
-    let totLatteVaccaPerPasto = 0.0;
-    let totAcquaPerPasto = 0.0;
-    let totPolverePerPastoTotal = 0.0;
+    const mealTotals = {
+        1: { lattePolvere: 0, acqua: 0, polvere: 0, latteVacca: 0 },
+        2: { lattePolvere: 0, acqua: 0, polvere: 0, latteVacca: 0 },
+        3: { lattePolvere: 0, acqua: 0, polvere: 0, latteVacca: 0 }
+    };
+
     let currentTotalKgWeaningFromToday = 0.0; // This will only sum powder remaining
     let hasCowMilkCalf = false;
-    let activePowderCalfCount = 0;
-    let activeCowMilkCalfCount = 0;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -2598,7 +2651,6 @@ const App = () => {
                   }
 
                   doseGiornalieraText = `Latte vacca: ${latteGiornaliero.toFixed(2)} L`;
-                  dosePerPastoText = `Latte vacca: ${lattePerPasto.toFixed(2)} L (${pasti} pasti)`;
                   giorniMancantiText += " (Latte Vacca)";
 
               } else { // Powdered milk calculation
@@ -2616,7 +2668,6 @@ const App = () => {
                 }
 
                 doseGiornalieraText = `Latte: ${latteGiornaliero.toFixed(2)} L\nAcqua: ${acquaGiornaliera.toFixed(2)} L\nLatte in Polvere: ${polvereGiornaliera.toFixed(2)} kg`;
-                dosePerPastoText = `Latte: ${lattePerPasto.toFixed(2)} L\nAcqua: ${acquaPerPasto.toFixed(2)} L\nPolvere: ${polverePerPastoValue.toFixed(2)} kg\n(${pasti} pasti)`;
 
                 // Calculate remaining powder only for powdered milk calves
                 let milkPerCalfRemaining = 0.0;
@@ -2638,6 +2689,19 @@ const App = () => {
                 }
                 currentTotalKgWeaningFromToday += milkPerCalfRemaining;
               }
+
+              // Costruisce la stringa per la dose per pasto.
+              // Dato che i pasti sono identici, mostriamo i dettagli di un singolo pasto per evitare ripetizioni.
+              if (pasti > 0) {
+                if (isCowMilk) {
+                  dosePerPastoText = `Latte vacca: ${lattePerPasto.toFixed(2)} L`;
+                } else {
+                  dosePerPastoText = `Latte: ${lattePerPasto.toFixed(2)} L\nAcqua: ${acquaPerPasto.toFixed(2)} L\nPolvere: ${polverePerPastoValue.toFixed(2)} kg`;
+                }
+              } else {
+                dosePerPastoText = "N/A";
+              }
+
             } else { // No calfConfig
               doseGiornalieraText = "Dati mancanti";
               dosePerPastoText = "Dati mancanti";
@@ -2662,17 +2726,23 @@ const App = () => {
       if (giorniPassati < durataSvezzamentoGiorni) {
         if (isCowMilk) {
             hasCowMilkCalf = true;
-            activeCowMilkCalfCount++;
             totLatteVaccaGiornaliero += latteGiornaliero;
-            totLatteVaccaPerPasto += lattePerPasto;
         } else {
-            activePowderCalfCount++;
             totLattePolvereGiornaliero += latteGiornaliero;
             totAcquaGiornaliera += acquaGiornaliera;
             totPolvereGiornaliera += polvereGiornaliera;
-            totLattePolverePerPasto += lattePerPasto;
-            totAcquaPerPasto += acquaPerPasto;
-            totPolverePerPastoTotal += polverePerPastoValue;
+        }
+
+        for (let i = 1; i <= pasti; i++) {
+            if (mealTotals[i]) {
+                if (isCowMilk) {
+                    mealTotals[i].latteVacca += lattePerPasto;
+                } else {
+                    mealTotals[i].lattePolvere += lattePerPasto;
+                    mealTotals[i].acqua += acquaPerPasto;
+                    mealTotals[i].polvere += polverePerPastoValue;
+                }
+            }
         }
       }
 
@@ -2703,11 +2773,8 @@ const App = () => {
             latteVacca: totLatteVaccaGiornaliero,
             acqua: totAcquaGiornaliera,
             polvere: totPolvereGiornaliera,
-            lattePolverePasto: totLattePolverePerPasto,
-            latteVaccaPasto: totLatteVaccaPerPasto,
-            acquaPasto: totAcquaPerPasto,
-            polverePastoTotal: totPolverePerPastoTotal,
             hasCowMilk: hasCowMilkCalf,
+            mealTotals: mealTotals,
         },
         totalKgWeaningFromToday: currentTotalKgWeaningFromToday
     };
@@ -3271,7 +3338,7 @@ const App = () => {
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Tipo Latte"),
               React.createElement("th", { className: "py-3 px-4 text-center border-b" }, "Da \u2192 A"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Dose Totale Giornaliera"),
-              React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Dose per Pasto"),
+              React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Dosi per Pasto"),
               React.createElement("th", { className: "py-3 px-4 text-left border-b" }, "Giorni allo Svezzamento"),
               React.createElement("th", { className: "py-3 px-4 text-center border-b" }, "Dettagli/Impostazioni"),
               React.createElement("th", { className: "py-3 px-4 text-center border-b" }, "Cancella")
@@ -3392,12 +3459,58 @@ const App = () => {
           React.createElement("h3", { className: "text-lg font-bold text-blue-300 mb-2 text-center" }, "Dose Totale per Pasto"), // Set default dark theme colors
           React.createElement(
             "div",
-            { className: "text-center font-medium text-blue-400 space-y-1" }, // Rimosso whitespace-pre-wrap, aggiunto space-y
-            React.createElement("p", null, `Latte in polvere (ricostituito): ${totals.lattePolverePasto.toFixed(2)} L`),
-            React.createElement("p", null, `Acqua: ${totals.acquaPasto.toFixed(2)} L`),
-            React.createElement("p", null, `Latte in Polvere: ${totals.polverePastoTotal.toFixed(2)} kg`),
-            React.createElement("p", { className: "text-xs italic text-gray-400" }, "(per pasto in media)"),
-            totals.hasCowMilk && React.createElement(React.Fragment, null, React.createElement("hr", { className: "my-2 border-gray-600" }), React.createElement("p", null, `Latte di vacca: ${totals.latteVaccaPasto.toFixed(2)} L (per pasto)`))
+            { className: "space-y-3" },
+            (() => {
+              const areMealsEqual = (meal1, meal2) => {
+                if (!meal1 || !meal2) return false;
+                return (
+                  Math.abs((meal1.lattePolvere || 0) - (meal2.lattePolvere || 0)) < 0.01 &&
+                  Math.abs((meal1.acqua || 0) - (meal2.acqua || 0)) < 0.01 &&
+                  Math.abs((meal1.polvere || 0) - (meal2.polvere || 0)) < 0.01 &&
+                  Math.abs((meal1.latteVacca || 0) - (meal2.latteVacca || 0)) < 0.01
+                );
+              };
+
+              const mealTotalsEntries = Object.entries(totals.mealTotals || {}).filter(
+                ([_, meal]) => meal.lattePolvere > 0 || meal.latteVacca > 0 || meal.acqua > 0 || meal.polvere > 0
+              );
+
+              if (mealTotalsEntries.length === 0) {
+                return null; // Non renderizzare nulla se non ci sono pasti
+              }
+
+              let allMealsAreSame = true;
+              if (mealTotalsEntries.length > 1) {
+                const firstMeal = mealTotalsEntries[0][1];
+                for (let i = 1; i < mealTotalsEntries.length; i++) {
+                  if (!areMealsEqual(firstMeal, mealTotalsEntries[i][1])) {
+                    allMealsAreSame = false;
+                    break;
+                  }
+                }
+              }
+
+              const MealDetails = ({ meal }) => React.createElement(
+                React.Fragment,
+                null,
+                meal.lattePolvere > 0 && React.createElement("p", { className: "text-sm" }, `Latte (ricostituito): ${meal.lattePolvere.toFixed(2)} L`),
+                meal.acqua > 0 && React.createElement("p", { className: "text-sm" }, `Acqua: ${meal.acqua.toFixed(2)} L`),
+                meal.polvere > 0 && React.createElement("p", { className: "text-sm" }, `Polvere: ${meal.polvere.toFixed(2)} kg`),
+                meal.latteVacca > 0 && React.createElement("p", { className: "text-sm" }, `Latte Vacca: ${meal.latteVacca.toFixed(2)} L`)
+              );
+
+              if (allMealsAreSame) {
+                const meal = mealTotalsEntries[0][1];
+                return React.createElement("div", { key: "single-meal", className: "text-center font-medium text-blue-400" }, React.createElement(MealDetails, { meal: meal }));
+              } else {
+                return mealTotalsEntries.map(([mealNumber, meal]) =>
+                  React.createElement("div", { key: mealNumber, className: "text-center font-medium text-blue-400 border-t border-gray-600 pt-2 first:border-t-0" },
+                    React.createElement("p", { className: "font-semibold text-md" }, `Pasto ${mealNumber}`),
+                    React.createElement(MealDetails, { meal: meal })
+                  )
+                );
+              }
+            })()
           )
         ),
         React.createElement(
