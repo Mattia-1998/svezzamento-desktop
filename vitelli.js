@@ -1,8 +1,8 @@
 // Funzione di utilità per formattare la data (output in DD/MM/YYYY)
 const formatDate = (date) => {
   if (!(date instanceof Date) || isNaN(date.getTime())) {
-    console.warn('Data non valida fornita, restituisco "Invalid Date". Input:', date);
-    return 'Invalid Date'; // Handle invalid date objects gracefully
+    console.warn('Data non valida fornita, restituisco una stringa vuota. Input:', date);
+    return ''; // Handle invalid date objects gracefully
   }
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -48,7 +48,7 @@ const ToggleSwitch = ({ checked, onChange, label }) => {
     "div",
     { className: "flex items-center space-x-2" },
     React.createElement("span", { className: "text-gray-300 text-sm" }, label), // Changed to dark mode text
-    React.createElement(
+    React.createElement( // Unique ID
       "label",
       { htmlFor: label.replace(/\s/g, '-') + "-toggle-switch", className: "flex items-center cursor-pointer" }, // Unique ID
       React.createElement(
@@ -56,7 +56,7 @@ const ToggleSwitch = ({ checked, onChange, label }) => {
         { className: "relative" },
         React.createElement("input", {
           type: "checkbox",
-          id: label.replace(/\s/g, '-') + "-toggle-switch", // Unique ID
+          id: label.replace(/\s/g, '-') + "-toggle-switch",
           className: "sr-only",
           checked: checked,
           onChange: onChange,
@@ -130,7 +130,7 @@ const PlusIcon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("path", { d: "M12 5V19M5 12H19" })
   );
 
@@ -148,7 +148,7 @@ const RefreshCcwIcon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("path", { d: "M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.79 2.91L3 8" }),
     React.createElement("path", { d: "M3 3v5h5" }),
     React.createElement("path", { d: "M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.79-2.91L21 16" }),
@@ -169,7 +169,7 @@ const Trash2Icon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("path", { d: "M3 6h18" }),
     React.createElement("path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" }),
     React.createElement("path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" }),
@@ -191,7 +191,7 @@ const SortAscIcon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("path", { d: "M3 10h18" }),
     React.createElement("path", { d: "M3 6h18" }),
     React.createElement("path", { d: "M3 14h18" }),
@@ -213,7 +213,7 @@ const SortDescIcon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("path", { d: "M3 6h18" }),
     React.createElement("path", { d: "M3 10h18" }),
     React.createElement("path", { d: "M3 14h18" }),
@@ -235,7 +235,7 @@ const FileTextIcon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("path", { d: "M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" }),
     React.createElement("polyline", { points: "14 2 14 8 20 8" }),
     React.createElement("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
@@ -257,7 +257,7 @@ const PrinterIcon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("polyline", { points: "6 9 6 2 18 2 18 9" }),
     React.createElement("path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }),
     React.createElement("rect", { x: "6", y: "14", width: "12", height: "8" })
@@ -277,7 +277,7 @@ const FileSpreadsheetIcon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L15 2z" }),
     React.createElement("polyline", { points: "14 2 14 8 20 8" }),
     React.createElement("path", { d: "M4 10h16" }),
@@ -299,7 +299,7 @@ const HardDriveIcon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("line", { x1: "22", y1: "12", x2: "2", y2: "12" }),
     React.createElement("path", { d: "M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" }),
     React.createElement("line", { x1: "6", y1: "16", x2: "6.01", y2: "16" }),
@@ -320,7 +320,7 @@ const SettingsIcon = ({ size = 24, className = "" }) =>
       strokeLinecap: "round",
       strokeLinejoin: "round",
       className: className,
-    },
+    }, // Unique ID
     React.createElement("path", { d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.78 1.28a2 2 0 0 0 .73 2.73l.15.08a2 2 0 0 1 1 1.73v.44a2 2 0 0 1-2 2v.18a2 2 0 0 0-1 1.73l-.43.25a2 2 0 0 0 .73 2.73l.78 1.28a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 1-1.73v.44a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l-.43-.25a2 2 0 0 1 2 0l-.15.08a2 2 0  0 0 2.73-.73l.78-1.28a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.73v-.44a2 2 0 0 0 2-2v-.18a2 2 0 0 0-1-1.73l-.43-.25a2 2 0 0 1-2 0l-.15.08a2 2 0 0 0-2.73-.73l-.78-1.28a2 2 0 0 0-.73-2.73l.15-.08a2 2 0 0 1-1-1.73V2z" }),
     React.createElement("circle", { cx: "12", cy: "12", r: "3" })
   );
@@ -2046,44 +2046,37 @@ const App = () => {
     doc.text(`Programma di Svezzamento Settimanale`, doc.internal.pageSize.width / 2, yPos, { align: 'center' });
     yPos += 15;
 
-    let loopStartDate;
-    let daysToExport;
-
     if (options.option === '7days') {
-        loopStartDate = new Date();
-        daysToExport = 7;
+        options.startDate = formatDate(new Date());
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 6);
+        options.endDate = formatDate(endDate);
     } else if (options.option === 'xdays') {
-        loopStartDate = new Date();
-        daysToExport = parseInt(options.numDays, 10);
-    } else { // 'daterange'
-        const start = new Date(parseDateToYYYYMMDD(options.startDate));
-        const end = new Date(parseDateToYYYYMMDD(options.endDate));
-        start.setHours(0, 0, 0, 0);
-        end.setHours(0, 0, 0, 0);
-        loopStartDate = start;
-        const diffTime = Math.abs(end - start);
-        daysToExport = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + (parseInt(options.numDays, 10) - 1));
+        options.startDate = formatDate(new Date());
+        options.endDate = formatDate(endDate);
     }
-    loopStartDate.setHours(0, 0, 0, 0);
+
+    const loopStartDate = new Date(parseDateToYYYYMMDD(options.startDate));
+    const loopEndDate = new Date(parseDateToYYYYMMDD(options.endDate));
+    const daysToExport = Math.ceil(Math.abs(loopEndDate - loopStartDate) / (1000 * 60 * 60 * 24)) + 1;
 
     for (let i = 0; i < daysToExport; i++) {
       const currentDate = new Date(loopStartDate);
       currentDate.setDate(loopStartDate.getDate() + i);
       const currentDateString = formatDate(currentDate);
 
-      if (i > 0) { // Add a gap between tables
-        yPos += 10;
-      }
-
       // Check if there's enough space for the next table header, if not, add a page
+      // Let autoTable handle page breaks, but check for the initial title of the day
       if (yPos > doc.internal.pageSize.height - 40) {
         doc.addPage();
         yPos = 15;
       }
 
+      doc.setFont(undefined, 'normal'); // Reset font style to normal for the day title
       doc.setFontSize(14);
       doc.text(`Giorno: ${currentDateString}`, 14, yPos);
-      yPos += 8;
 
       const tableData = calvesToExport.map(calf => {
           const calfConfig = (calf.individual_config && calf.individual_config.length > 0)
@@ -2195,7 +2188,7 @@ const App = () => {
 
         if (options.contentOption === 'both' || options.contentOption === 'detailsOnly') {
             doc.autoTable({
-                startY: yPos,
+                startY: yPos + 8,
                 margin: { left: 14, right: 14 },
                 head: [["Matricola", "Tipo", "Pasti", "Latte/Pasto", "Acqua/Pasto", "Polvere/Pasto", "Latte/Giorno", "Acqua/Giorno", "Polvere/Giorno", "Descrizione"]],
                 body: tableData,
@@ -2215,89 +2208,83 @@ const App = () => {
                     9: { cellWidth: 68 }  // Descrizione
                 }
             });
-            yPos = doc.autoTable.previous.finalY;
         }
 
         if (options.contentOption === 'both' || options.contentOption === 'totalsOnly') {
             if (hasPowder || hasCow) {
-                // Controlla lo spazio per il riepilogo, aggiunge una nuova pagina se necessario
-                if (yPos > doc.internal.pageSize.height - 35) {
-                    doc.addPage();
-                    yPos = 15;
-                }
-                yPos += 5;
                 doc.setFontSize(10);
                 doc.setFont(undefined, 'bold');
-                doc.text("Riepilogo Totali del Giorno:", 14, yPos);
-                yPos += 2;
+                // The title is now part of the table header logic below
 
-                const dailyBody = [];
+                const dailySummaryHeaders = ['Tipo Latte', 'Latte Totale (L)', 'Acqua Totale (L)', 'Polvere Totale (kg)'];
+                const dailySummaryBody = [];
                 if (hasPowder) {
-                    dailyBody.push(['Latte Polvere (ricost.)', `${totalsForDay.powder.latteGiorno.toFixed(2)} L`]);
-                    dailyBody.push(['Acqua', `${totalsForDay.powder.acquaGiorno.toFixed(2)} L`]);
-                    dailyBody.push(['Polvere', `${totalsForDay.powder.polvereGiorno.toFixed(2)} kg`]);
+                    dailySummaryBody.push(['Polvere', totalsForDay.powder.latteGiorno.toFixed(2), totalsForDay.powder.acquaGiorno.toFixed(2), totalsForDay.powder.polvereGiorno.toFixed(2)]);
                 }
                 if (hasCow) {
-                    dailyBody.push(['Latte Vacca', `${totalsForDay.cow.latteGiorno.toFixed(2)} L`]);
+                    dailySummaryBody.push(['Vacca', totalsForDay.cow.latteGiorno.toFixed(2), '-', '-']);
                 }
 
                 doc.autoTable({
-                    startY: yPos,
-                    head: [['Dose Giornaliera Totale', 'Quantità']],
-                    body: dailyBody,
+                    // Let autoTable position this table after the previous one
+                    startY: (options.contentOption === 'both' || options.contentOption === 'detailsOnly') ? undefined : yPos + 8,
+                    margin: { left: 14, right: 14, top: (options.contentOption === 'both' || options.contentOption === 'detailsOnly') ? 5 : 0 },
+                    head: [dailySummaryHeaders],
+                    body: dailySummaryBody,
                     theme: 'grid',
                     headStyles: { fillColor: [96, 125, 139], fontSize: 8, fontStyle: 'bold' },
                     bodyStyles: { fontSize: 8 },
                     styles: { cellPadding: 1.5, valign: 'middle' },
-                    columnStyles: { 0: { fontStyle: 'bold' } },
-                    margin: { left: 14, right: 14 },
-                    didDrawPage: (data) => { yPos = data.cursor.y; }
+                    willDrawPage: (data) => {
+                        doc.setFontSize(10);
+                        doc.setFont(undefined, 'bold');
+                        doc.text("Riepilogo Totali del Giorno:", 14, data.cursor.y);
+                    },
                 });
-                yPos = doc.autoTable.previous.finalY + 5;
 
                 // Now the per-meal totals
-                Object.keys(totalsForDay.mealTotals).forEach(mealNumber => {
-                    const meal = totalsForDay.mealTotals[mealNumber];
-                    if (meal.lattePolvere > 0 || meal.latteVacca > 0) {
-                        if (yPos > doc.internal.pageSize.height - 30) {
-                            doc.addPage();
-                            yPos = 15;
-                        }
-                        
-                        const mealBody = [];
+                const mealEntries = Object.entries(totalsForDay.mealTotals).filter(([_, meal]) => meal.lattePolvere > 0 || meal.latteVacca > 0);
+                
+                if (mealEntries.length > 0) {
+                    const mealSummaryHeaders = ['Pasto', 'Tipo Latte', 'Latte/Pasto (L)', 'Acqua/Pasto (L)', 'Polvere/Pasto (kg)'];
+                    const mealSummaryBody = [];
+
+                    mealEntries.forEach(([mealNumber, meal]) => {
                         if (meal.lattePolvere > 0) {
-                            mealBody.push(['Latte Polvere (ricost.)', `${meal.lattePolvere.toFixed(2)} L`]);
-                            mealBody.push(['Acqua', `${meal.acqua.toFixed(2)} L`]);
-                            mealBody.push(['Polvere', `${meal.polvere.toFixed(2)} kg`]);
+                            mealSummaryBody.push([`Pasto ${mealNumber}`, 'Polvere', meal.lattePolvere.toFixed(2), meal.acqua.toFixed(2), meal.polvere.toFixed(2)]);
                         }
                         if (meal.latteVacca > 0) {
-                            mealBody.push(['Latte Vacca', `${meal.latteVacca.toFixed(2)} L`]);
+                            mealSummaryBody.push([`Pasto ${mealNumber}`, 'Vacca', meal.latteVacca.toFixed(2), '-', '-']);
                         }
+                    });
 
-                        doc.autoTable({
-                            startY: yPos,
-                            head: [[`Totale Pasto ${mealNumber}`]],
-                            body: mealBody,
-                            theme: 'grid',
-                            headStyles: { fillColor: [127, 140, 141], fontSize: 8, fontStyle: 'bold' },
-                            bodyStyles: { fontSize: 8 },
-                            styles: { cellPadding: 1.5, valign: 'middle' },
-                            columnStyles: { 0: { fontStyle: 'bold' } },
-                            margin: { left: 14, right: 14 },
-                            didDrawPage: (data) => { yPos = data.cursor.y; }
-                        });
-                        yPos = doc.autoTable.previous.finalY + 2;
-                    }
-                });
+                    doc.autoTable({
+                        // Let autoTable position this table after the previous one
+                        startY: undefined,
+                        head: [mealSummaryHeaders],
+                        body: mealSummaryBody,
+                        theme: 'grid',
+                        headStyles: { fillColor: [127, 140, 141], fontSize: 8, fontStyle: 'bold' },
+                        bodyStyles: { fontSize: 8 },
+                        styles: { cellPadding: 1.5, valign: 'middle' },
+                        margin: { left: 14, right: 14, top: 2 }
+                    });
+                }
             }
         }
       } else {
           if (options.contentOption === 'both' || options.contentOption === 'detailsOnly') {
               doc.setFontSize(10);
-              doc.text("Nessun vitello in svezzamento per questo giorno.", 14, yPos);
-              yPos += 10;
+              doc.text("Nessun vitello in svezzamento per questo giorno.", 14, yPos + 8);
+              yPos += 8; // Manually update yPos since no table is drawn
           }
       }
+      // Update yPos for the next day's section
+      // Add a margin for the next day's title
+      if (doc.autoTable.previous) {
+        yPos = doc.autoTable.previous.finalY;
+      }
+      yPos += 15; // Add a consistent margin between days
     }
 
     doc.save(`Programma_Svezzamento_Settimanale.pdf`);
