@@ -2194,19 +2194,7 @@ const App = () => {
                 body: tableData,
                 theme: 'grid',
                 headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: 'bold' },
-                styles: { fontSize: 7, cellPadding: 1.5, valign: 'middle' },
-                columnStyles: {
-                    0: { cellWidth: 25 }, // Matricola
-                    1: { cellWidth: 15 }, // Tipo
-                    2: { cellWidth: 15 }, // Pasti
-                    3: { cellWidth: 22 }, // Latte/Pasto
-                    4: { cellWidth: 22 }, // Acqua/Pasto
-                    5: { cellWidth: 22 }, // Polvere/Pasto
-                    6: { cellWidth: 22 }, // Latte/Giorno
-                    7: { cellWidth: 22 }, // Acqua/Giorno
-                    8: { cellWidth: 22 }, // Polvere/Giorno
-                    9: { cellWidth: 68 }  // Descrizione
-                }
+                styles: { fontSize: 7, cellPadding: 1.5, valign: 'middle' }
             });
         }
 
@@ -2246,17 +2234,28 @@ const App = () => {
                 const mealEntries = Object.entries(totalsForDay.mealTotals).filter(([_, meal]) => meal.lattePolvere > 0 || meal.latteVacca > 0);
                 
                 if (mealEntries.length > 0) {
-                    const mealSummaryHeaders = ['Pasto', 'Tipo Latte', 'Latte/Pasto (L)', 'Acqua/Pasto (L)', 'Polvere/Pasto (kg)'];
-                    const mealSummaryBody = [];
+                  const mealSummaryHeaders = ['Pasto', 'Tipo Latte', 'Latte/Pasto (L)', 'Acqua/Pasto (L)', 'Polvere/Pasto (kg)'];
+                  const mealSummaryBody = [];
 
+                  const areMealsEqual = (meal1, meal2) => {
+                    if (!meal1 || !meal2) return false;
+                    const tolerance = 0.01;
+                    return Math.abs((meal1.lattePolvere || 0) - (meal2.lattePolvere || 0)) < tolerance &&
+                           Math.abs((meal1.acqua || 0) - (meal2.acqua || 0)) < tolerance &&
+                           Math.abs((meal1.polvere || 0) - (meal2.polvere || 0)) < tolerance &&
+                           Math.abs((meal1.latteVacca || 0) - (meal2.latteVacca || 0)) < tolerance;
+                  };
+
+                  if (mealEntries.length === 2 && areMealsEqual(mealEntries[0][1], mealEntries[1][1])) {
+                    const meal = mealEntries[0][1];
+                    if (meal.lattePolvere > 0) mealSummaryBody.push(['Pasto 1 / Pasto 2', 'Polvere', meal.lattePolvere.toFixed(2), meal.acqua.toFixed(2), meal.polvere.toFixed(2)]);
+                    if (meal.latteVacca > 0) mealSummaryBody.push(['Pasto 1 / Pasto 2', 'Vacca', meal.latteVacca.toFixed(2), '-', '-']);
+                  } else {
                     mealEntries.forEach(([mealNumber, meal]) => {
-                        if (meal.lattePolvere > 0) {
-                            mealSummaryBody.push([`Pasto ${mealNumber}`, 'Polvere', meal.lattePolvere.toFixed(2), meal.acqua.toFixed(2), meal.polvere.toFixed(2)]);
-                        }
-                        if (meal.latteVacca > 0) {
-                            mealSummaryBody.push([`Pasto ${mealNumber}`, 'Vacca', meal.latteVacca.toFixed(2), '-', '-']);
-                        }
+                      if (meal.lattePolvere > 0) mealSummaryBody.push([`Pasto ${mealNumber}`, 'Polvere', meal.lattePolvere.toFixed(2), meal.acqua.toFixed(2), meal.polvere.toFixed(2)]);
+                      if (meal.latteVacca > 0) mealSummaryBody.push([`Pasto ${mealNumber}`, 'Vacca', meal.latteVacca.toFixed(2), '-', '-']);
                     });
+                  }
 
                     doc.autoTable({
                         // Let autoTable position this table after the previous one
@@ -3490,7 +3489,7 @@ const App = () => {
                 const meal = mealTotalsEntries[0][1];
                 return React.createElement("div", { key: "single-meal", className: "text-center font-medium text-blue-400" }, React.createElement(MealDetails, { meal: meal }));
               } else {
-                return mealTotalsEntries.map(([mealNumber, meal]) =>
+                return mealTotalsEntries.length === 2 && areMealsEqual(mealTotalsEntries[0][1], mealTotalsEntries[1][1]) ? React.createElement("div", { key: "combined-meal", className: "text-center font-medium text-blue-400" }, React.createElement(MealDetails, { meal: mealTotalsEntries[0][1] })) : mealTotalsEntries.map(([mealNumber, meal]) =>
                   React.createElement("div", { key: mealNumber, className: "text-center font-medium text-blue-400 border-t border-gray-600 pt-2 first:border-t-0" },
                     React.createElement("p", { className: "font-semibold text-md" }, `Pasto ${mealNumber}`),
                     React.createElement(MealDetails, { meal: meal })
@@ -3623,6 +3622,8 @@ const App = () => {
     })
   );
 };
+
+
 
 // Il codice di rendering finale è stato spostato in index.html
 // Rimosso il blocco document.addEventListener('DOMContentLoaded', ...) da qui.
